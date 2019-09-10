@@ -1,3 +1,4 @@
+import copy from "copy-anything";
 import { Result, ResultType, Ok, Err } from "../internal";
 
 export enum OptionType {
@@ -7,6 +8,19 @@ export enum OptionType {
 
 export type Some<T> = { type: OptionType.Some; payload: T };
 export type None = { type: OptionType.None };
+
+function SomeVariant<T>(payload: T): Some<T> {
+  return {
+    type: OptionType.Some,
+    payload
+  };
+}
+
+function NoneVariant(): None {
+  return {
+    type: OptionType.None
+  };
+}
 
 export type OptionVariant<T> = Some<T> | None;
 
@@ -27,11 +41,29 @@ export class Option<T = any> {
   }
 
   public static Some<T>(payload: T): Option<T> {
-    return new Option({ type: OptionType.Some, payload });
+    return new Option(SomeVariant(payload));
   }
 
   public static None(): Option {
-    return new Option({ type: OptionType.None });
+    return new Option(NoneVariant());
+  }
+
+  // Convenience property for accesing OptionType.Some
+  public static SomeT = OptionType.Some;
+
+  // Convenience property for accesing OptionType.None
+  public static NoneT = OptionType.None;
+
+  // Not part of Rust::std::option::Option
+  // This is an attempt to mimic Rust's `match` keyword
+  // NOTE: this returns a copy of Option's payload
+  public match(): OptionVariant<T> {
+    switch (this.payload.type) {
+      case OptionType.Some:
+        return SomeVariant(copy(this.payload.payload));
+      case OptionType.None:
+        return NoneVariant();
+    }
   }
 
   public is_some(): boolean {
@@ -233,12 +265,12 @@ export class Option<T = any> {
 
   public take(): Option<T> {
     let ret = Option.from(this.payload);
-    this.payload = { type: OptionType.None };
+    this.payload = NoneVariant();
     return ret;
   }
 
   public replace(payload: T): Option<T> {
-    this.payload = { type: OptionType.Some, payload };
+    this.payload = SomeVariant(payload);
     return this;
   }
 
@@ -259,4 +291,6 @@ export class Option<T = any> {
 }
 
 export const Some = Option.Some;
+export const SomeT = Option.SomeT;
 export const None = Option.None;
+export const NoneT = Option.NoneT;

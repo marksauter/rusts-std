@@ -1,3 +1,4 @@
+import copy from "copy-anything";
 import { Option, Some, None } from "../internal";
 
 export enum ResultType {
@@ -7,6 +8,20 @@ export enum ResultType {
 
 export type Ok<T> = { type: ResultType.Ok; payload: T };
 export type Err<E> = { type: ResultType.Err; payload: E };
+
+function OkVariant<T>(payload: T): Ok<T> {
+  return {
+    type: ResultType.Ok,
+    payload
+  };
+}
+
+function ErrVariant<E>(payload: E): Err<E> {
+  return {
+    type: ResultType.Err,
+    payload
+  };
+}
 
 export type ResultVariant<T, E> = Ok<T> | Err<E>;
 
@@ -27,11 +42,29 @@ export class Result<T, E> {
   }
 
   public static Ok<T>(payload: T): Result<T, any> {
-    return new Result({ type: ResultType.Ok, payload });
+    return new Result(OkVariant(payload));
   }
 
   public static Err<E>(payload: E): Result<any, E> {
-    return new Result({ type: ResultType.Err, payload });
+    return new Result(ErrVariant(payload));
+  }
+
+  // Convenience property for accesing ResultType.Ok
+  public static OkT = ResultType.Ok;
+
+  // Convenience property for accesing OptionType.Err
+  public static ErrE = ResultType.Err;
+
+  // Not part of Rust::std::result::Result
+  // This is an attempt to mimic Rust's `match` keyword
+  // NOTE: this returns a copy of Result's payload
+  public match(): ResultVariant<T, E> {
+    switch (this.payload.type) {
+      case ResultType.Ok:
+        return OkVariant(copy(this.payload.payload));
+      case ResultType.Err:
+        return ErrVariant(copy(this.payload.payload));
+    }
   }
 
   public is_ok(): boolean {
@@ -210,4 +243,6 @@ export class Result<T, E> {
 }
 
 export const Ok = Result.Ok;
+export const OkT = Result.OkT;
 export const Err = Result.Err;
+export const ErrE = Result.ErrE;

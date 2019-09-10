@@ -113,5 +113,8 @@
     "tslint-config-standard": "^8.0.1",
     "typedoc": "^0.15.0",
     "typescript": "^3.6.2"
+  },
+  "dependencies": {
+    "copy-anything": "^1.5.0"
   }
 }
