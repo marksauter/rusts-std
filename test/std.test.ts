@@ -1,4 +1,4 @@
-import { Option, Result } from "../src/rusts-std";
+import { Option, Result } from "../src/std";
 
 test("exports Option", () => {
   expect(Option).toBeDefined();
