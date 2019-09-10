@@ -4,10 +4,6 @@
 
 [![][ci-badge]][ci-url] [![][npm-badge]][npm-url]
 
-*NOTE:* This contains forks of [@marionebl/result](https://github.com/marionebl/result)
-and [@marionebl/option](https://github.com/marionebl/option), so credit goes to Mario
-for his work on those.
-
 This is currently only for personal use.
 
 ## License
