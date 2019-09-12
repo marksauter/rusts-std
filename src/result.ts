@@ -1,25 +1,24 @@
-import copy from "copy-anything";
-import { Option, Some, None } from "../internal";
+import { Option, Some, None } from "./internal";
 
 export enum ResultType {
   Ok = "Ok",
   Err = "Err"
 }
 
-export type Ok<T> = { type: ResultType.Ok; payload: T };
-export type Err<E> = { type: ResultType.Err; payload: E };
+export type Ok<T> = { type: ResultType.Ok; value: T };
+export type Err<E> = { type: ResultType.Err; value: E };
 
-function OkVariant<T>(payload: T): Ok<T> {
+function OkVariant<T>(value: T): Ok<T> {
   return {
     type: ResultType.Ok,
-    payload
+    value
   };
 }
 
-function ErrVariant<E>(payload: E): Err<E> {
+function ErrVariant<E>(value: E): Err<E> {
   return {
     type: ResultType.Err,
-    payload
+    value
   };
 }
 
@@ -32,38 +31,38 @@ export class Result<T, E> {
     this.payload = payload;
   }
 
-  public static from<T, E>(payload: ResultVariant<T, E>): Result<T, E> {
-    switch (payload.type) {
-      case ResultType.Ok:
-        return Result.Ok(payload.payload);
-      case ResultType.Err:
-        return Result.Err(payload.payload);
-    }
-  }
-
-  public static Ok<T>(payload: T): Result<T, any> {
+  public static Ok<T = any, E = void>(payload: T): Result<T, E> {
     return new Result(OkVariant(payload));
   }
 
-  public static Err<E>(payload: E): Result<any, E> {
+  public static Err<T = void, E = any>(payload: E): Result<T, E> {
     return new Result(ErrVariant(payload));
   }
 
   // Convenience property for accesing ResultType.Ok
   public static OkT = ResultType.Ok;
 
-  // Convenience property for accesing OptionType.Err
+  // Convenience property for accesing ResultType.Err
   public static ErrE = ResultType.Err;
+
+  public eq(other: Result<T, E>): boolean {
+    let value = this.payload.value;
+    switch (this.payload.type) {
+      case ResultType.Ok:
+        return other.map_or_else(() => false, (t: T) => t === value);
+      case ResultType.Err:
+        return other.map_or_else((e: E) => e === value, () => false);
+    }
+  }
 
   // Not part of Rust::std::result::Result
   // This is an attempt to mimic Rust's `match` keyword
-  // NOTE: this returns a copy of Result's payload
   public match(): ResultVariant<T, E> {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return OkVariant(copy(this.payload.payload));
+        return OkVariant(this.payload.value);
       case ResultType.Err:
-        return ErrVariant(copy(this.payload.payload));
+        return ErrVariant(this.payload.value);
     }
   }
 
@@ -83,7 +82,7 @@ export class Result<T, E> {
   public ok(): Option<T> {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return Option.Some(this.payload.payload);
+        return Option.Some(this.payload.value);
       case ResultType.Err:
         return Option.None();
     }
@@ -94,40 +93,42 @@ export class Result<T, E> {
       case ResultType.Ok:
         return Option.None();
       case ResultType.Err:
-        return Option.Some(this.payload.payload);
+        return Option.Some(this.payload.value);
     }
   }
 
-  public map<U, F extends (v: T) => U>(op: F): Result<U, E> {
+  public map<U>(op: (v: T) => U): Result<U, E> {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return Result.Ok(op(this.payload.payload));
+        return Result.Ok(op(this.payload.value));
       case ResultType.Err:
-        return Result.Err(this.payload.payload);
+        return Result.Err(this.payload.value);
     }
   }
 
-  public map_or_else<U, M extends (v: T) => U, F extends (v: E) => U>(fallback: F, map: M): U {
-    return this.map<U, M>(map).unwrap_or_else(fallback);
+  public map_or_else<U>(fallback: (v: E) => U, map: (v: T) => U): U {
+    return this.map<U>(map).unwrap_or_else(fallback);
   }
 
-  public map_err<F, O extends (e: E) => F>(op: O): Result<T, F> {
+  public map_err<F>(op: (e: E) => F): Result<T, F> {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return Result.Ok(this.payload.payload);
+        return Result.Ok(this.payload.value);
       case ResultType.Err:
-        return Result.Err(op(this.payload.payload));
+        return Result.Err(op(this.payload.value));
     }
   }
 
   public iter(): Iterator<Option<T>> {
     let self = this;
+    let done = false;
     return {
       next(): IteratorResult<Option<T>> {
-        return {
-          done: true,
-          value: self.ok()
-        };
+        if (done) {
+          return { done: true, value: Option.None() };
+        }
+        done = true;
+        return { done: false, value: self.ok() };
       }
     };
   }
@@ -141,95 +142,95 @@ export class Result<T, E> {
       case ResultType.Ok:
         return res;
       case ResultType.Err:
-        return Result.Err(this.payload.payload);
+        return Result.Err(this.payload.value);
     }
   }
 
-  public and_then<U, F extends (t: T) => Result<U, E>>(op: F): Result<U, E> {
+  public and_then<U>(op: (t: T) => Result<U, E>): Result<U, E> {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return op(this.payload.payload);
+        return op(this.payload.value);
       case ResultType.Err:
-        return Result.Err(this.payload.payload);
+        return Result.Err(this.payload.value);
     }
   }
 
   public or<F>(res: Result<T, F>): Result<T, F> {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return Result.Ok(this.payload.payload);
+        return Result.Ok(this.payload.value);
       case ResultType.Err:
         return res;
     }
   }
 
-  public or_else<F, O extends (e: E) => Result<T, F>>(op: O): Result<T, F> {
+  public or_else<F>(op: (e: E) => Result<T, F>): Result<T, F> {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return Result.Ok(this.payload.payload);
+        return Result.Ok(this.payload.value);
       case ResultType.Err:
-        return op(this.payload.payload);
+        return op(this.payload.value);
     }
   }
 
   public unwrap_or(optb: T): T {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return this.payload.payload;
+        return this.payload.value;
       case ResultType.Err:
         return optb;
     }
   }
 
-  public unwrap_or_else<F extends (e: E) => T>(op: F): T {
+  public unwrap_or_else(op: (e: E) => T): T {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return this.payload.payload;
+        return this.payload.value;
       case ResultType.Err:
-        return op(this.payload.payload);
+        return op(this.payload.value);
     }
   }
 
   public unwrap(): T {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return this.payload.payload;
+        return this.payload.value;
       case ResultType.Err:
-        throw new Error(`called 'Result.unwrap()' on an 'Err' value: ${this.payload.payload}`);
+        throw new Error(`called 'Result.unwrap()' on an 'Err' value: ${this.payload.value}`);
     }
   }
 
   public expect(msg: string): T {
     switch (this.payload.type) {
       case ResultType.Ok:
-        return this.payload.payload;
+        return this.payload.value;
       case ResultType.Err:
-        throw new Error(`${msg}: ${this.payload.payload}`);
+        throw new Error(`${msg}: ${this.payload.value}`);
     }
   }
 
   public unwrap_err(): E {
     switch (this.payload.type) {
       case ResultType.Ok:
-        throw new Error(`called 'Result.unwrap_err()' on an 'Ok' value: ${this.payload.payload}`);
+        throw new Error(`called 'Result.unwrap_err()' on an 'Ok' value: ${this.payload.value}`);
       case ResultType.Err:
-        return this.payload.payload;
+        return this.payload.value;
     }
   }
 
   public expect_err(msg: string): E {
     switch (this.payload.type) {
       case ResultType.Ok:
-        throw new Error(`${msg}: ${this.payload.payload}`);
+        throw new Error(`${msg}: ${this.payload.value}`);
       case ResultType.Err:
-        return this.payload.payload;
+        return this.payload.value;
     }
   }
 
   public transpose(): Option<Result<any, any>> {
     switch (this.payload.type) {
       case ResultType.Ok: {
-        let opt = this.payload.payload;
+        let opt = this.payload.value;
         if (opt instanceof Option) {
           return opt.map((t: any) => Result.Ok(t));
         } else {
@@ -237,12 +238,18 @@ export class Result<T, E> {
         }
       }
       case ResultType.Err:
-        return Option.Some(Result.Err(this.payload.payload));
+        return Option.Some(Result.Err(this.payload.value));
     }
   }
 }
 
-export const Ok = Result.Ok;
+export function Ok<T = any, E = void>(payload: T): Result<T, E> {
+  return Result.Ok<T, E>(payload);
+}
+
+export function Err<T = void, E = any>(payload: E): Result<T, E> {
+  return Result.Err<T, E>(payload);
+}
+
 export const OkT = Result.OkT;
-export const Err = Result.Err;
 export const ErrE = Result.ErrE;

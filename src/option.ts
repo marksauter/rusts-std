@@ -1,18 +1,23 @@
-import copy from "copy-anything";
-import { Result, ResultType, Ok, Err } from "../internal";
+import {
+  // result
+  Result,
+  ResultType,
+  Ok,
+  Err
+} from "./internal";
 
 export enum OptionType {
   Some = "Some",
   None = "None"
 }
 
-export type Some<T> = { type: OptionType.Some; payload: T };
+export type Some<T> = { type: OptionType.Some; value: T };
 export type None = { type: OptionType.None };
 
-function SomeVariant<T>(payload: T): Some<T> {
+function SomeVariant<T>(value: T): Some<T> {
   return {
     type: OptionType.Some,
-    payload
+    value
   };
 }
 
@@ -24,27 +29,18 @@ function NoneVariant(): None {
 
 export type OptionVariant<T> = Some<T> | None;
 
-export class Option<T = any> {
+export class Option<T> {
   private payload: OptionVariant<T>;
 
   private constructor(payload: OptionVariant<T>) {
     this.payload = payload;
   }
 
-  public static from<T>(payload: OptionVariant<T>): Option<T> {
-    switch (payload.type) {
-      case OptionType.Some:
-        return Option.Some(payload.payload);
-      case OptionType.None:
-        return Option.None();
-    }
-  }
-
   public static Some<T>(payload: T): Option<T> {
     return new Option(SomeVariant(payload));
   }
 
-  public static None(): Option {
+  public static None<T = never>(): Option<T> {
     return new Option(NoneVariant());
   }
 
@@ -54,13 +50,23 @@ export class Option<T = any> {
   // Convenience property for accesing OptionType.None
   public static NoneT = OptionType.None;
 
+  public eq(other: Option<T>): boolean {
+    switch (this.payload.type) {
+      case OptionType.Some: {
+        let value = this.payload.value;
+        return other.map_or(false, (t: T) => t === value);
+      }
+      case OptionType.None:
+        return other.is_none();
+    }
+  }
+
   // Not part of Rust::std::option::Option
   // This is an attempt to mimic Rust's `match` keyword
-  // NOTE: this returns a copy of Option's payload
   public match(): OptionVariant<T> {
     switch (this.payload.type) {
       case OptionType.Some:
-        return SomeVariant(copy(this.payload.payload));
+        return SomeVariant(this.payload.value);
       case OptionType.None:
         return NoneVariant();
     }
@@ -82,7 +88,7 @@ export class Option<T = any> {
   public expect(msg: string): T {
     switch (this.payload.type) {
       case OptionType.Some:
-        return this.payload.payload;
+        return this.payload.value;
       case OptionType.None:
         throw new Error(msg);
     }
@@ -91,7 +97,7 @@ export class Option<T = any> {
   public unwrap(): T {
     switch (this.payload.type) {
       case OptionType.Some:
-        return this.payload.payload;
+        return this.payload.value;
       case OptionType.None:
         throw new Error("called `Option.unwrap()` on a `None` value");
     }
@@ -100,43 +106,43 @@ export class Option<T = any> {
   public unwrap_or(def: T): T {
     switch (this.payload.type) {
       case OptionType.Some:
-        return this.payload.payload;
+        return this.payload.value;
       case OptionType.None:
         return def;
     }
   }
 
-  public unwrap_or_else<F extends () => T>(f: F): T {
+  public unwrap_or_else(f: () => T): T {
     switch (this.payload.type) {
       case OptionType.Some:
-        return this.payload.payload;
+        return this.payload.value;
       case OptionType.None:
         return f();
     }
   }
 
-  public map<U, F extends (t: T) => U>(f: F): Option<U> {
+  public map<U>(f: (t: T) => U): Option<U> {
     switch (this.payload.type) {
       case OptionType.Some:
-        return Option.Some(f(this.payload.payload));
+        return Option.Some(f(this.payload.value));
       case OptionType.None:
         return Option.None();
     }
   }
 
-  public map_or<U, F extends (t: T) => U>(def: U, f: F): U {
+  public map_or<U>(def: U, f: (t: T) => U): U {
     switch (this.payload.type) {
       case OptionType.Some:
-        return f(this.payload.payload);
+        return f(this.payload.value);
       case OptionType.None:
         return def;
     }
   }
 
-  public map_or_else<U, D extends () => U, F extends (t: T) => U>(def: D, f: F): U {
+  public map_or_else<U>(def: () => U, f: (t: T) => U): U {
     switch (this.payload.type) {
       case OptionType.Some:
-        return f(this.payload.payload);
+        return f(this.payload.value);
       case OptionType.None:
         return def();
     }
@@ -145,16 +151,16 @@ export class Option<T = any> {
   public ok_or<E>(err: E): Result<T, E> {
     switch (this.payload.type) {
       case OptionType.Some:
-        return Result.Ok(this.payload.payload);
+        return Result.Ok(this.payload.value);
       case OptionType.None:
         return Result.Err(err);
     }
   }
 
-  public ok_or_else<E, F extends () => E>(err: F): Result<T, E> {
+  public ok_or_else<E>(err: () => E): Result<T, E> {
     switch (this.payload.type) {
       case OptionType.Some:
-        return Result.Ok(this.payload.payload);
+        return Result.Ok(this.payload.value);
       case OptionType.None:
         return Result.Err(err());
     }
@@ -162,12 +168,14 @@ export class Option<T = any> {
 
   public iter(): Iterator<Option<T>> {
     let self = this;
+    let done = false;
     return {
       next(): IteratorResult<Option<T>> {
-        return {
-          done: true,
-          value: self
-        };
+        if (done) {
+          return { done: true, value: Option.None() };
+        }
+        done = true;
+        return { done: false, value: self };
       }
     };
   }
@@ -185,20 +193,20 @@ export class Option<T = any> {
     }
   }
 
-  public and_then<U, F extends (t: T) => Option<U>>(f: F): Option<U> {
+  public and_then<U>(f: (t: T) => Option<U>): Option<U> {
     switch (this.payload.type) {
       case OptionType.Some:
-        return f(this.payload.payload);
+        return f(this.payload.value);
       case OptionType.None:
         return Option.None();
     }
   }
 
-  public filter<P extends (t: T) => boolean>(predicate: P): Option<T> {
+  public filter(predicate: (t: T) => boolean): Option<T> {
     switch (this.payload.type) {
       case OptionType.Some: {
-        if (predicate(this.payload.payload)) {
-          return Option.Some(this.payload.payload);
+        if (predicate(this.payload.value)) {
+          return this;
         }
       }
       default:
@@ -215,7 +223,7 @@ export class Option<T = any> {
     }
   }
 
-  public or_else<F extends () => Option<T>>(f: F): Option<T> {
+  public or_else(f: () => Option<T>): Option<T> {
     switch (this.payload.type) {
       case OptionType.Some:
         return this;
@@ -228,15 +236,12 @@ export class Option<T = any> {
     switch (this.payload.type) {
       case OptionType.Some: {
         if (optb.is_none()) {
-          return Option.Some(this.payload.payload);
+          return this;
         }
         break;
       }
       case OptionType.None: {
-        if (optb.is_some()) {
-          return Option.Some((optb.payload as Some<T>).payload);
-        }
-        break;
+        return optb;
       }
     }
     return Option.None();
@@ -246,7 +251,7 @@ export class Option<T = any> {
     return this.get_or_insert_with(() => v);
   }
 
-  public get_or_insert_with<F extends () => T>(f: F): T {
+  public get_or_insert_with(f: () => T): T {
     switch (this.payload.type) {
       case OptionType.None:
         this.replace(f());
@@ -256,7 +261,7 @@ export class Option<T = any> {
 
     switch (this.payload.type) {
       case OptionType.Some:
-        return this.payload.payload;
+        return this.payload.value;
       // This should never happen
       case OptionType.None:
         throw new Error(`Option.get_or_insert_with: unreachable_unchecked ${self}`);
@@ -264,20 +269,34 @@ export class Option<T = any> {
   }
 
   public take(): Option<T> {
-    let ret = Option.from(this.payload);
-    this.payload = NoneVariant();
-    return ret;
+    switch (this.payload.type) {
+      case OptionType.Some:
+        let ret = Option.Some(this.payload.value);
+        this.payload = NoneVariant();
+        return ret;
+        break;
+      case OptionType.None:
+        return Option.None();
+        break;
+    }
   }
 
   public replace(payload: T): Option<T> {
-    this.payload = SomeVariant(payload);
-    return this;
+    switch (this.payload.type) {
+      case OptionType.Some:
+        let ret = Option.Some(this.payload.value);
+        this.payload = SomeVariant(payload);
+        return ret;
+      case OptionType.None:
+        this.payload = SomeVariant(payload);
+        return Option.None();
+    }
   }
 
   public transpose(): Result<Option<any>, any> {
     switch (this.payload.type) {
       case OptionType.Some: {
-        let res = this.payload.payload;
+        let res = this.payload.value;
         if (res instanceof Result) {
           return res.map((t: any) => Option.Some(t));
         } else {
@@ -290,7 +309,13 @@ export class Option<T = any> {
   }
 }
 
-export const Some = Option.Some;
+export function Some<T>(payload: T): Option<T> {
+  return Option.Some<T>(payload);
+}
+
+export function None<T = never>(): Option<T> {
+  return Option.None<T>();
+}
+
 export const SomeT = Option.SomeT;
-export const None = Option.None;
 export const NoneT = Option.NoneT;
