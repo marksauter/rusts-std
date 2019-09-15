@@ -45,10 +45,16 @@ class Point {
 
 describe("Eq", () => {
   test("eq_and_ne", () => {
+    assert(eq(null, null));
+    assert(eq(NaN, NaN));
     assert(eq(1, 1));
+    assert(eq([1, 2], [1, 2]));
+    assert(eq({ a: 1 }, { a: 1 }));
     assert(eq(new Point(1, 1), new Point(1, 1)));
 
     assert(ne(1, 2));
+    assert(ne([1, 2], [2, 1]));
+    assert(ne({ a: 1 }, { a: 2 }));
     assert(ne(new Point(1, 1), new Point(2, 2)));
   });
 });

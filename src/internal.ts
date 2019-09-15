@@ -6,8 +6,10 @@ export const test = {
 
 export * from "./ops";
 
+export * from "./clone";
 export * from "./cmp";
 export * from "./consts";
+export * from "./default";
 export * from "./fmt";
 export * from "./macros";
 export * from "./option";

@@ -1,6 +1,6 @@
 import { assert, assert_eq, assert_ne, should_panic } from "../src/macros.test";
 import { Result, Ok, OkVariant, Err, ErrVariant } from "../src/result";
-import { Option, None, Some } from "../src/std";
+import { Option, None, Some, Less, Greater, Equal } from "../src/std";
 
 function op1(): Result<number, string> {
   return Ok(666);
@@ -26,6 +26,47 @@ describe("Result", () => {
 
     assert_eq(ok1, ok1_2);
     assert_eq(err1, err1_2);
+  });
+
+  test("cmp", () => {
+    let ok1: Result<number, number> = Ok(0);
+    let ok2: Result<number, number> = Ok(5);
+    assert_eq(ok1.cmp(ok1), Equal);
+    assert_eq(ok1.cmp(ok2), Less);
+    assert_eq(ok2.cmp(ok1), Greater);
+
+    let err1: Result<number, number> = Err(0);
+    let err2: Result<number, number> = Err(5);
+    assert_eq(err1.cmp(err1), Equal);
+    assert_eq(err1.cmp(err2), Less);
+    assert_eq(err2.cmp(err1), Greater);
+
+    assert_eq(ok1.cmp(err2), Greater);
+    assert_eq(err2.cmp(ok1), Less);
+  });
+
+  test("clone", () => {
+    let x: Result<number, string> = Ok(1);
+    let y: Result<number, string> = x.clone();
+    // Compare by reference
+    assert(x !== y);
+    // Compare by value
+    assert_eq(x, y);
+
+    x = Err("error");
+    y = x.clone();
+    // Compare by reference
+    assert(x !== y);
+    // Compare by value
+    assert_eq(x, y);
+  });
+
+  test("fmt_debug", () => {
+    let x = Ok(1);
+    assert_eq(x.fmt_debug(), "Ok(1)");
+
+    let y = Err("error");
+    assert_eq(y.fmt_debug(), 'Err("error")');
   });
 
   test("match", () => {

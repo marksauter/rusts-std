@@ -1,6 +1,6 @@
 import { assert, assert_eq, assert_ne, should_panic } from "../src/macros.test";
 import { Option, Some, SomeVariant, None, NoneVariant } from "../src/option";
-import { Result } from "../src/std";
+import { Result, Less, Equal, Greater } from "../src/std";
 
 describe("Option", () => {
   test("option_dance", () => {
@@ -29,6 +29,42 @@ describe("Option", () => {
     assert_ne(x, y);
     x.replace(5);
     assert_eq(x, y);
+  });
+
+  test("cmp", () => {
+    let x = Some(0);
+    let y = Some(5);
+    assert_eq(x.cmp(x), Equal);
+    assert_eq(x.cmp(y), Less);
+    assert_eq(y.cmp(x), Greater);
+
+    x = None();
+    y = None();
+    assert_eq(x.cmp(y), Equal);
+  });
+
+  test("clone", () => {
+    let x = Some(1);
+    let y = x.clone();
+    // Compare by reference
+    assert(x !== y);
+    // Compare by value
+    assert_eq(x, y);
+
+    x = None();
+    y = x.clone();
+    // Compare by reference
+    assert(x !== y);
+    // Compare by value
+    assert_eq(x, y);
+  });
+
+  test("fmt_debug", () => {
+    let x = Some(1);
+    assert_eq(x.fmt_debug(), "Some(1)");
+
+    let y = None();
+    assert_eq(y.fmt_debug(), "None");
   });
 
   test("match", () => {

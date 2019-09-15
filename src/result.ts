@@ -4,7 +4,20 @@ import {
   Some,
   None,
   // cmp.ts
-  eq
+  Eq,
+  eq,
+  Ord,
+  Ordering,
+  Equal,
+  Greater,
+  Less,
+  cmp,
+  // clone.ts
+  Clone,
+  clone,
+  // fmt.ts
+  Debug,
+  format
 } from "./internal";
 
 export enum ResultType {
@@ -31,7 +44,8 @@ export function ErrVariant<E>(value: E): Err<E> {
 
 export type ResultVariant<T, E> = Ok<T> | Err<E>;
 
-export class Result<T, E> {
+export class Result<T, E>
+  implements Eq<Result<T, E>>, Ord<Result<T, E>>, Debug, Clone<Result<T, E>> {
   private payload: ResultVariant<T, E>;
 
   private constructor(payload: ResultVariant<T, E>) {
@@ -60,6 +74,33 @@ export class Result<T, E> {
       case ResultType.Err:
         return other.map_or_else((e: E) => eq(e, value), () => false);
     }
+  }
+
+  public cmp(other: Result<T, E>): Ordering {
+    let value = this.payload.value;
+    switch (this.payload.type) {
+      case ResultType.Ok:
+        return other.map_or_else(() => Greater, (t: T) => cmp(value, t));
+      case ResultType.Err:
+        return other.map_or_else((e: E) => cmp(value, e), () => Less);
+    }
+  }
+
+  public partial_cmp(other: Result<T, E>): Option<Ordering> {
+    return Some(this.cmp(other));
+  }
+
+  public clone(): Result<T, E> {
+    switch (this.payload.type) {
+      case ResultType.Ok:
+        return Result.Ok(clone(this.payload.value));
+      case ResultType.Err:
+        return Result.Err(clone(this.payload.value));
+    }
+  }
+
+  public fmt_debug(): string {
+    return `${this.payload.type}(${format("{:?}", this.payload.value)})`;
   }
 
   // Not part of Rust::std::result::Result

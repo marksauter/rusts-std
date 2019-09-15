@@ -5,7 +5,20 @@ import {
   Ok,
   Err,
   // cmp.ts
-  eq
+  Eq,
+  eq,
+  Ord,
+  Ordering,
+  Equal,
+  Greater,
+  Less,
+  cmp,
+  // clone.ts
+  Clone,
+  clone,
+  // fmt.ts
+  Debug,
+  format
 } from "./internal";
 
 export enum OptionType {
@@ -31,7 +44,7 @@ export function NoneVariant(): None {
 
 export type OptionVariant<T> = Some<T> | None;
 
-export class Option<T> {
+export class Option<T> implements Eq<Option<T>>, Ord<Option<T>>, Clone<Option<T>>, Debug {
   private payload: OptionVariant<T>;
 
   private constructor(payload: OptionVariant<T>) {
@@ -52,6 +65,10 @@ export class Option<T> {
   // Convenience property for accesing OptionType.None
   public static NoneT = OptionType.None;
 
+  public static default<T>(): Option<T> {
+    return Option.None();
+  }
+
   public eq(other: Option<T>): boolean {
     switch (this.payload.type) {
       case OptionType.Some: {
@@ -60,6 +77,38 @@ export class Option<T> {
       }
       case OptionType.None:
         return other.is_none();
+    }
+  }
+
+  public cmp(other: Option<T>): Ordering {
+    switch (this.payload.type) {
+      case OptionType.Some:
+        let value = this.payload.value;
+        return other.map_or(Greater, (t: T) => cmp(value, t));
+      case OptionType.None:
+        return other.map_or(Equal, () => Less);
+    }
+  }
+
+  public partial_cmp(other: Option<T>): Option<Ordering> {
+    return Some(this.cmp(other));
+  }
+
+  public clone(): Option<T> {
+    switch (this.payload.type) {
+      case OptionType.Some:
+        return Option.Some(clone(this.payload.value));
+      case OptionType.None:
+        return Option.None();
+    }
+  }
+
+  public fmt_debug(): string {
+    switch (this.payload.type) {
+      case OptionType.Some:
+        return `${this.payload.type}(${format("{:?}", this.payload.value)})`;
+      case OptionType.None:
+        return `${this.payload.type}`;
     }
   }
 
