@@ -1,5 +1,6 @@
 import { assert } from "./macros";
 import { Option } from "./internal";
+const is_equal = require("lodash.isequal");
 
 export interface PartialEq<T> {
   eq(this: T, other: T): boolean;
@@ -19,7 +20,7 @@ export function eq(left: any, right: any): boolean {
   if (isPartialEq(left)) {
     return left.eq(right);
   }
-  return left === right;
+  return is_equal(left, right);
 }
 
 export function ne<T>(left: T & PartialEq<T>, right: T & PartialEq<T>): boolean;
@@ -28,7 +29,7 @@ export function ne(left: any, right: any): boolean {
   if (isPartialEq(left)) {
     return !left.eq(right);
   }
-  return left !== right;
+  return !is_equal(left, right);
 }
 
 enum OrderingType {
