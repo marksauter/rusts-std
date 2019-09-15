@@ -1,12 +1,16 @@
-import { Option } from "../internal";
+import { Debug, Option } from "../internal";
 
-export class Range {
+export class Range implements Debug {
   public start: number;
   public end: number;
 
   constructor(start: number, end: number) {
     this.start = start;
     this.end = end;
+  }
+
+  public fmt_debug(): string {
+    return `${this.start}..${this.end}`;
   }
 
   public next(): IteratorResult<Option<number>> {
@@ -40,26 +44,22 @@ export class Range {
   }
 }
 
-// export class RangeFrom {
+// export class RangeFrom implements Debug {
 //   public start: number
 //
 //   constructor(start: number) {
 //     this.start = start
 //   }
 //
+//   public debug(): string {
+//     return `${this.start}..`
+//   }
+//
 //   public next(): IteratorResult<Option<number>> {
 //     if (this.start < Number.MAX_SAFE_INTEGER) {
-//       ++this.start
-//       if (this.start < Number.MAX_SAFE_INTEGER) {
-//         return {
-//           done: false,
-//           value: Option.Some(this.start)
-//         }
-//       } else {
-//         return {
-//           done: true,
-//           value: Option.None()
-//         };
+//       return {
+//         done: false,
+//         value: Option.Some(this.start++)
 //       }
 //     } else {
 //       return {
@@ -81,7 +81,7 @@ export class Range {
 //     return item >= this.start
 //   }
 // }
-//
+
 // export class RangeTo {
 //   public end: number
 //
@@ -175,3 +175,7 @@ export class Range {
 //     return item <= this.end
 //   }
 // }
+
+export function range(start: number, end: number): Range {
+  return new Range(start, end);
+}

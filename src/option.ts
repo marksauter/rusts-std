@@ -1,9 +1,11 @@
 import {
-  // result
+  // result.ts
   Result,
   ResultType,
   Ok,
-  Err
+  Err,
+  // cmp.ts
+  eq
 } from "./internal";
 
 export enum OptionType {
@@ -14,14 +16,14 @@ export enum OptionType {
 export type Some<T> = { type: OptionType.Some; value: T };
 export type None = { type: OptionType.None };
 
-function SomeVariant<T>(value: T): Some<T> {
+export function SomeVariant<T>(value: T): Some<T> {
   return {
     type: OptionType.Some,
     value
   };
 }
 
-function NoneVariant(): None {
+export function NoneVariant(): None {
   return {
     type: OptionType.None
   };
@@ -40,7 +42,7 @@ export class Option<T> {
     return new Option(SomeVariant(payload));
   }
 
-  public static None<T = never>(): Option<T> {
+  public static None<T = void>(): Option<T> {
     return new Option(NoneVariant());
   }
 
@@ -54,7 +56,7 @@ export class Option<T> {
     switch (this.payload.type) {
       case OptionType.Some: {
         let value = this.payload.value;
-        return other.map_or(false, (t: T) => t === value);
+        return other.map_or(false, (t: T) => eq(t, value));
       }
       case OptionType.None:
         return other.is_none();
@@ -274,10 +276,8 @@ export class Option<T> {
         let ret = Option.Some(this.payload.value);
         this.payload = NoneVariant();
         return ret;
-        break;
       case OptionType.None:
         return Option.None();
-        break;
     }
   }
 
@@ -298,7 +298,10 @@ export class Option<T> {
       case OptionType.Some: {
         let res = this.payload.value;
         if (res instanceof Result) {
-          return res.map((t: any) => Option.Some(t));
+          return res.map_or_else(
+            (e: any) => Result.Err(Option.Some(e)),
+            (t: any) => Result.Ok(Option.Some(t))
+          );
         } else {
           return Result.Ok(Option.Some(res));
         }
@@ -313,7 +316,7 @@ export function Some<T>(payload: T): Option<T> {
   return Option.Some<T>(payload);
 }
 
-export function None<T = never>(): Option<T> {
+export function None<T = void>(): Option<T> {
   return Option.None<T>();
 }
 

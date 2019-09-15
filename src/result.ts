@@ -1,4 +1,11 @@
-import { Option, Some, None } from "./internal";
+import {
+  // option.ts
+  Option,
+  Some,
+  None,
+  // cmp.ts
+  eq
+} from "./internal";
 
 export enum ResultType {
   Ok = "Ok",
@@ -8,14 +15,14 @@ export enum ResultType {
 export type Ok<T> = { type: ResultType.Ok; value: T };
 export type Err<E> = { type: ResultType.Err; value: E };
 
-function OkVariant<T>(value: T): Ok<T> {
+export function OkVariant<T>(value: T): Ok<T> {
   return {
     type: ResultType.Ok,
     value
   };
 }
 
-function ErrVariant<E>(value: E): Err<E> {
+export function ErrVariant<E>(value: E): Err<E> {
   return {
     type: ResultType.Err,
     value
@@ -49,9 +56,9 @@ export class Result<T, E> {
     let value = this.payload.value;
     switch (this.payload.type) {
       case ResultType.Ok:
-        return other.map_or_else(() => false, (t: T) => t === value);
+        return other.map_or_else(() => false, (t: T) => eq(t, value));
       case ResultType.Err:
-        return other.map_or_else((e: E) => e === value, () => false);
+        return other.map_or_else((e: E) => eq(e, value), () => false);
     }
   }
 
@@ -128,7 +135,7 @@ export class Result<T, E> {
           return { done: true, value: Option.None() };
         }
         done = true;
-        return { done: false, value: self.ok() };
+        return { done: self.is_err(), value: self.ok() };
       }
     };
   }
