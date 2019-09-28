@@ -11,9 +11,6 @@ import {
   ImplDoubleEndedIterator,
   DoubleEndedIterator,
   isDoubleEndedIterator,
-  ImplFusedIterator,
-  FusedIterator,
-  isFusedIterator,
   IntoIterator,
   // clone.ts
   ImplClone,

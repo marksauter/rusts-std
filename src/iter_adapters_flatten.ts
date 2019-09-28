@@ -13,9 +13,6 @@ import {
   DoubleEndedIterator,
   DoubledEndedIteratorFace,
   isDoubleEndedIterator,
-  ImplFusedIterator,
-  FusedIterator,
-  isFusedIterator,
   // iter_adapters.ts
   Map,
   MapForDoubleEndedIterator,

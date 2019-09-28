@@ -917,44 +917,50 @@ export interface Extend<Item> {
   extend<I extends IntoIterator<Item>>(iter: I): void;
 }
 
-// An iterator that always continues to yield `None` when exhausted.
-export const ImplFusedIterator = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
-  class FusedIterator extends Base {
-    readonly isFusedIterator = true;
-  };
-
-export type FusedIterator = Mixin<typeof ImplFusedIterator>;
-
-export function isFusedIterator(i: any): i is FusedIterator {
-  return typeof i === "object" && i !== null && (i as FusedIterator).isFusedIterator;
-}
-
-// An iterator that reports an accurate length using size_hint.
+/**
+ * An iterator that always continues to yield `None` when exhausted.
+ */
+// export const ImplFusedIterator = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
+//   class FusedIterator extends Base {
+//     readonly isFusedIterator = true;
+//   };
 //
-// This trait must only be implements when the contract is upheld.
-// Consumers of this trait must inspect [`.size_hint`]'s upper bound.
-export const ImplTrustedLen = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
-  class TrustedLen extends Base {};
+// export type FusedIterator = Mixin<typeof ImplFusedIterator>;
+//
+// export function isFusedIterator(i: any): i is FusedIterator {
+//   return typeof i === "object" && i !== null && (i as FusedIterator).isFusedIterator;
+// }
 
-export type TrustedLen = Mixin<typeof ImplTrustedLen>;
+/**
+ * An iterator that reports an accurate length using size_hint.
+ *
+ * This trait must only be implements when the contract is upheld.
+ * Consumers of this trait must inspect [`.size_hint`]'s upper bound.
+ */
+// export const ImplTrustedLen = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
+//   class TrustedLen extends Base {};
+//
+// export type TrustedLen = Mixin<typeof ImplTrustedLen>;
 
-// An iterator whose items are random accessible efficiently
-export const ImplTrustedRandomAccess = <T extends AnyConstructor<ExactSizeIterator>>(Base: T) =>
-  class TrustedRandomAccess extends Base {
-    public get_unchecked(i: number): this["Item"] {
-      abstract_panic("TrustedRandomAccess", "get_unchecked");
-      // Unreachable code
-      return (undefined as unknown) as this["Item"];
-    }
-
-    public may_have_side_effect(): boolean {
-      abstract_panic("TrustedRandomAccess", "may_have_side_effect");
-      // Unreachable code
-      return false;
-    }
-  };
-
-export type TrustedRandomAccess = Mixin<typeof ImplTrustedRandomAccess>;
+/**
+ * An iterator whose items are random accessible efficiently
+ */
+// export const ImplTrustedRandomAccess = <T extends AnyConstructor<ExactSizeIterator>>(Base: T) =>
+//   class TrustedRandomAccess extends Base {
+//     public get_unchecked(i: number): this["Item"] {
+//       abstract_panic("TrustedRandomAccess", "get_unchecked");
+//       // Unreachable code
+//       return (undefined as unknown) as this["Item"];
+//     }
+//
+//     public may_have_side_effect(): boolean {
+//       abstract_panic("TrustedRandomAccess", "may_have_side_effect");
+//       // Unreachable code
+//       return false;
+//     }
+//   };
+//
+// export type TrustedRandomAccess = Mixin<typeof ImplTrustedRandomAccess>;
 
 export function process_results<T, E, I extends IteratorFace<Result<T, E>>, U>(
   iter: I,

@@ -8,7 +8,6 @@ import {
   // iter.ts
   IteratorBase,
   IteratorFace,
-  TrustedLen,
   from_fn,
   ImplExactSizeIterator,
   ExactSizeIterator,
@@ -16,9 +15,9 @@ import {
   ImplDoubleEndedIterator,
   DoubleEndedIterator,
   isDoubleEndedIterator,
-  ImplFusedIterator,
-  FusedIterator,
-  isFusedIterator,
+  // ImplFusedIterator,
+  // FusedIterator,
+  // isFusedIterator,
   LoopState,
   LoopStateType,
   Continue,
@@ -1989,296 +1988,296 @@ export class Scan extends ImplClone(IteratorBase) implements Debug {
   }
 }
 
-export class Fuse extends ImplClone(IteratorBase) implements Debug {
-  public Self!: Fuse;
-
-  public Iter!: IteratorBase;
-
-  public iter: this["Iter"];
-  public done: boolean;
-
-  constructor(iter: IteratorBase) {
-    super();
-    this.iter = iter;
-    this.done = false;
-  }
-
-  public clone(): this["Self"] {
-    if (
-      isFusedIterator(this.iter) &&
-      isExactSizeIterator(this.iter) &&
-      isDoubleEndedIterator(this.iter)
-    ) {
-      return new FuseForFusedAndExactSizeAndDoubleEndedIterator(clone(this.iter));
-    } else if (isFusedIterator(this.iter) && isExactSizeIterator(this.iter)) {
-      return new FuseForFusedAndExactSizeIterator(clone(this.iter));
-    } else if (isFusedIterator(this.iter) && isDoubleEndedIterator(this.iter)) {
-      return new FuseForFusedAndDoubleEndedIterator(clone(this.iter));
-    } else if (isExactSizeIterator(this.iter) && isDoubleEndedIterator(this.iter)) {
-      return new FuseForExactSizeAndDoubleEndedIterator(clone(this.iter));
-    } else if (isExactSizeIterator(this.iter)) {
-      return new FuseForExactSizeIterator(clone(this.iter));
-    } else if (isDoubleEndedIterator(this.iter)) {
-      return new FuseForDoubleEndedIterator(clone(this.iter));
-    } else if (isFusedIterator(this.iter)) {
-      return new FuseForFusedIterator(clone(this.iter));
-    } else {
-      return new FuseForIterator(clone(this.iter));
-    }
-  }
-
-  public fmt_debug(): string {
-    return format("Fuse({:?},{:?})", this.done, this.iter);
-  }
-}
-
-export const ImplFuseForIterator = <T extends AnyConstructor<Fuse>>(Base: T) =>
-  class FuseForIterator extends Base {
-    public Self!: FuseForIterator;
-
-    public next(): Option<this["Item"]> {
-      if (this.done) {
-        return None();
-      } else {
-        let next = this.iter.next();
-        this.done = next.is_none();
-        return next;
-      }
-    }
-
-    public nth(n: number): Option<this["Item"]> {
-      if (this.done) {
-        return None();
-      } else {
-        let nth = this.iter.nth(n);
-        this.done = nth.is_none();
-        return nth;
-      }
-    }
-
-    public last(): Option<this["Item"]> {
-      if (this.done) {
-        return None();
-      } else {
-        return this.iter.last();
-      }
-    }
-
-    public count(): number {
-      if (this.done) {
-        return 0;
-      } else {
-        return this.iter.count();
-      }
-    }
-
-    public size_hint(): [number, Option<number>] {
-      if (this.done) {
-        return [0, Some(0)];
-      } else {
-        return this.iter.size_hint();
-      }
-    }
-
-    public try_fold<Acc, R extends Try>(
-      init: Acc,
-      r: TryConstructor<R>,
-      fold: (acc: Acc, item: this["Item"]) => R
-    ): R {
-      if (this.done) {
-        return r.from_okay(init);
-      } else {
-        let try_acc = this.iter.try_fold(init, r, fold);
-        if (try_acc.is_error()) {
-          return try_acc;
-        }
-        let acc = try_acc.unwrap();
-        this.done = true;
-        return r.from_okay(acc);
-      }
-    }
-
-    public fold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
-      if (this.done) {
-        return init;
-      } else {
-        return this.iter.fold(init, fold);
-      }
-    }
-  };
-
-export class FuseForIterator extends ImplFuseForIterator(Fuse) {}
-
-export const ImplFuseForDoubleEndedIterator = <
-  T extends AnyConstructor<FuseForIterator & DoubleEndedIterator>
->(
-  Base: T
-) =>
-  class FuseForDoubleEndedIterator extends Base {
-    public Self!: FuseForDoubleEndedIterator;
-
-    public Iter!: DoubleEndedIterator;
-
-    public next_back(): Option<this["Item"]> {
-      if (this.done) {
-        return None();
-      } else {
-        let next = this.iter.next_back();
-        this.done = next.is_none();
-        return next;
-      }
-    }
-
-    public nth_back(n: number): Option<this["Item"]> {
-      if (this.done) {
-        return None();
-      } else {
-        let nth = this.iter.nth_back(n);
-        this.done = nth.is_none();
-        return nth;
-      }
-    }
-
-    public try_rfold<Acc, R extends Try>(
-      init: Acc,
-      r: TryConstructor<R>,
-      fold: (acc: Acc, item: this["Item"]) => R
-    ): R {
-      if (this.done) {
-        return r.from_okay(init);
-      } else {
-        let try_acc = this.iter.try_rfold(init, r, fold);
-        if (try_acc.is_error()) {
-          return try_acc;
-        }
-        let acc = try_acc.unwrap();
-        this.done = true;
-        return r.from_okay(acc);
-      }
-    }
-
-    public rfold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
-      if (this.done) {
-        return init;
-      } else {
-        return this.iter.rfold(init, fold);
-      }
-    }
-  };
-
-export class FuseForDoubleEndedIterator extends ImplFuseForDoubleEndedIterator(
-  ImplDoubleEndedIterator(ImplFuseForIterator(Fuse))
-) {}
-
-export const ImplFuseForFusedIterator = <T extends AnyConstructor<Fuse & FusedIterator>>(Base: T) =>
-  class FuseForFusedIterator extends Base {
-    public Self!: FuseForFusedIterator;
-
-    public Iter!: FusedIterator;
-
-    public next(): Option<this["Item"]> {
-      return this.iter.next();
-    }
-
-    public nth(n: number): Option<this["Item"]> {
-      return this.iter.nth(n);
-    }
-
-    public last(): Option<this["Item"]> {
-      return this.iter.last();
-    }
-
-    public count(): number {
-      return this.iter.count();
-    }
-
-    public size_hint(): [number, Option<number>] {
-      return this.iter.size_hint();
-    }
-
-    public try_fold<Acc, R extends Try>(
-      init: Acc,
-      r: TryConstructor<R>,
-      fold: (acc: Acc, item: this["Item"]) => R
-    ): R {
-      return this.iter.try_fold(init, r, fold);
-    }
-
-    public fold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
-      return this.iter.fold(init, fold);
-    }
-  };
-
-export class FuseForFusedIterator extends ImplFuseForFusedIterator(ImplFusedIterator(Fuse)) {}
-
-export const ImplFuseForFusedAndDoubleEndedIterator = <
-  T extends AnyConstructor<Fuse & DoubleEndedIterator>
->(
-  Base: T
-) =>
-  class FuseForFusedAndDoubleEndedIterator extends Base {
-    public Self!: FuseForFusedAndDoubleEndedIterator;
-
-    public Iter!: FusedIterator & DoubleEndedIterator;
-
-    public next_back(): Option<this["Item"]> {
-      return this.iter.next_back();
-    }
-
-    public nth_back(n: number): Option<this["Item"]> {
-      return this.iter.nth_back(n);
-    }
-
-    public try_rfold<Acc, R extends Try>(
-      init: Acc,
-      r: TryConstructor<R>,
-      fold: (acc: Acc, item: this["Item"]) => R
-    ): R {
-      return this.iter.try_rfold(init, r, fold);
-    }
-
-    public rfold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
-      return this.iter.rfold(init, fold);
-    }
-  };
-
-export class FuseForFusedAndDoubleEndedIterator extends ImplFuseForFusedAndDoubleEndedIterator(
-  ImplFuseForFusedIterator(ImplDoubleEndedIterator(ImplFusedIterator(Fuse)))
-) {}
-
-export const ImplFuseForExactSizeIterator = <T extends AnyConstructor<Fuse & ExactSizeIterator>>(
-  Base: T
-) =>
-  class FuseForExactSizeIterator extends Base {
-    public Self!: FuseForExactSizeIterator;
-
-    public Iter!: ExactSizeIterator;
-
-    public len(): number {
-      return this.iter.len();
-    }
-
-    public is_empty(): boolean {
-      return this.iter.is_empty();
-    }
-  };
-
-export class FuseForExactSizeIterator extends ImplFuseForExactSizeIterator(
-  ImplFuseForIterator(ImplExactSizeIterator(Fuse))
-) {}
-export class FuseForExactSizeAndDoubleEndedIterator extends ImplFuseForExactSizeIterator(
-  ImplFuseForIterator(ImplDoubleEndedIterator(ImplExactSizeIterator(Fuse)))
-) {}
-export class FuseForFusedAndExactSizeIterator extends ImplFuseForExactSizeIterator(
-  ImplFuseForFusedIterator(ImplExactSizeIterator(ImplFusedIterator(Fuse)))
-) {}
-export class FuseForFusedAndExactSizeAndDoubleEndedIterator extends ImplFuseForFusedAndDoubleEndedIterator(
-  ImplFuseForExactSizeIterator(
-    ImplFuseForFusedIterator(
-      ImplDoubleEndedIterator(ImplExactSizeIterator(ImplFusedIterator(Fuse)))
-    )
-  )
-) {}
+// export class Fuse extends ImplClone(IteratorBase) implements Debug {
+//   public Self!: Fuse;
+//
+//   public Iter!: IteratorBase;
+//
+//   public iter: this["Iter"];
+//   public done: boolean;
+//
+//   constructor(iter: IteratorBase) {
+//     super();
+//     this.iter = iter;
+//     this.done = false;
+//   }
+//
+//   public clone(): this["Self"] {
+//     if (
+//       isFusedIterator(this.iter) &&
+//       isExactSizeIterator(this.iter) &&
+//       isDoubleEndedIterator(this.iter)
+//     ) {
+//       return new FuseForFusedAndExactSizeAndDoubleEndedIterator(clone(this.iter));
+//     } else if (isFusedIterator(this.iter) && isExactSizeIterator(this.iter)) {
+//       return new FuseForFusedAndExactSizeIterator(clone(this.iter));
+//     } else if (isFusedIterator(this.iter) && isDoubleEndedIterator(this.iter)) {
+//       return new FuseForFusedAndDoubleEndedIterator(clone(this.iter));
+//     } else if (isExactSizeIterator(this.iter) && isDoubleEndedIterator(this.iter)) {
+//       return new FuseForExactSizeAndDoubleEndedIterator(clone(this.iter));
+//     } else if (isExactSizeIterator(this.iter)) {
+//       return new FuseForExactSizeIterator(clone(this.iter));
+//     } else if (isDoubleEndedIterator(this.iter)) {
+//       return new FuseForDoubleEndedIterator(clone(this.iter));
+//     } else if (isFusedIterator(this.iter)) {
+//       return new FuseForFusedIterator(clone(this.iter));
+//     } else {
+//       return new FuseForIterator(clone(this.iter));
+//     }
+//   }
+//
+//   public fmt_debug(): string {
+//     return format("Fuse({:?},{:?})", this.done, this.iter);
+//   }
+// }
+//
+// export const ImplFuseForIterator = <T extends AnyConstructor<Fuse>>(Base: T) =>
+//   class FuseForIterator extends Base {
+//     public Self!: FuseForIterator;
+//
+//     public next(): Option<this["Item"]> {
+//       if (this.done) {
+//         return None();
+//       } else {
+//         let next = this.iter.next();
+//         this.done = next.is_none();
+//         return next;
+//       }
+//     }
+//
+//     public nth(n: number): Option<this["Item"]> {
+//       if (this.done) {
+//         return None();
+//       } else {
+//         let nth = this.iter.nth(n);
+//         this.done = nth.is_none();
+//         return nth;
+//       }
+//     }
+//
+//     public last(): Option<this["Item"]> {
+//       if (this.done) {
+//         return None();
+//       } else {
+//         return this.iter.last();
+//       }
+//     }
+//
+//     public count(): number {
+//       if (this.done) {
+//         return 0;
+//       } else {
+//         return this.iter.count();
+//       }
+//     }
+//
+//     public size_hint(): [number, Option<number>] {
+//       if (this.done) {
+//         return [0, Some(0)];
+//       } else {
+//         return this.iter.size_hint();
+//       }
+//     }
+//
+//     public try_fold<Acc, R extends Try>(
+//       init: Acc,
+//       r: TryConstructor<R>,
+//       fold: (acc: Acc, item: this["Item"]) => R
+//     ): R {
+//       if (this.done) {
+//         return r.from_okay(init);
+//       } else {
+//         let try_acc = this.iter.try_fold(init, r, fold);
+//         if (try_acc.is_error()) {
+//           return try_acc;
+//         }
+//         let acc = try_acc.unwrap();
+//         this.done = true;
+//         return r.from_okay(acc);
+//       }
+//     }
+//
+//     public fold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
+//       if (this.done) {
+//         return init;
+//       } else {
+//         return this.iter.fold(init, fold);
+//       }
+//     }
+//   };
+//
+// export class FuseForIterator extends ImplFuseForIterator(Fuse) {}
+//
+// export const ImplFuseForDoubleEndedIterator = <
+//   T extends AnyConstructor<FuseForIterator & DoubleEndedIterator>
+// >(
+//   Base: T
+// ) =>
+//   class FuseForDoubleEndedIterator extends Base {
+//     public Self!: FuseForDoubleEndedIterator;
+//
+//     public Iter!: DoubleEndedIterator;
+//
+//     public next_back(): Option<this["Item"]> {
+//       if (this.done) {
+//         return None();
+//       } else {
+//         let next = this.iter.next_back();
+//         this.done = next.is_none();
+//         return next;
+//       }
+//     }
+//
+//     public nth_back(n: number): Option<this["Item"]> {
+//       if (this.done) {
+//         return None();
+//       } else {
+//         let nth = this.iter.nth_back(n);
+//         this.done = nth.is_none();
+//         return nth;
+//       }
+//     }
+//
+//     public try_rfold<Acc, R extends Try>(
+//       init: Acc,
+//       r: TryConstructor<R>,
+//       fold: (acc: Acc, item: this["Item"]) => R
+//     ): R {
+//       if (this.done) {
+//         return r.from_okay(init);
+//       } else {
+//         let try_acc = this.iter.try_rfold(init, r, fold);
+//         if (try_acc.is_error()) {
+//           return try_acc;
+//         }
+//         let acc = try_acc.unwrap();
+//         this.done = true;
+//         return r.from_okay(acc);
+//       }
+//     }
+//
+//     public rfold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
+//       if (this.done) {
+//         return init;
+//       } else {
+//         return this.iter.rfold(init, fold);
+//       }
+//     }
+//   };
+//
+// export class FuseForDoubleEndedIterator extends ImplFuseForDoubleEndedIterator(
+//   ImplDoubleEndedIterator(ImplFuseForIterator(Fuse))
+// ) {}
+//
+// export const ImplFuseForFusedIterator = <T extends AnyConstructor<Fuse & FusedIterator>>(Base: T) =>
+//   class FuseForFusedIterator extends Base {
+//     public Self!: FuseForFusedIterator;
+//
+//     public Iter!: FusedIterator;
+//
+//     public next(): Option<this["Item"]> {
+//       return this.iter.next();
+//     }
+//
+//     public nth(n: number): Option<this["Item"]> {
+//       return this.iter.nth(n);
+//     }
+//
+//     public last(): Option<this["Item"]> {
+//       return this.iter.last();
+//     }
+//
+//     public count(): number {
+//       return this.iter.count();
+//     }
+//
+//     public size_hint(): [number, Option<number>] {
+//       return this.iter.size_hint();
+//     }
+//
+//     public try_fold<Acc, R extends Try>(
+//       init: Acc,
+//       r: TryConstructor<R>,
+//       fold: (acc: Acc, item: this["Item"]) => R
+//     ): R {
+//       return this.iter.try_fold(init, r, fold);
+//     }
+//
+//     public fold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
+//       return this.iter.fold(init, fold);
+//     }
+//   };
+//
+// export class FuseForFusedIterator extends ImplFuseForFusedIterator(ImplFusedIterator(Fuse)) {}
+//
+// export const ImplFuseForFusedAndDoubleEndedIterator = <
+//   T extends AnyConstructor<Fuse & DoubleEndedIterator>
+// >(
+//   Base: T
+// ) =>
+//   class FuseForFusedAndDoubleEndedIterator extends Base {
+//     public Self!: FuseForFusedAndDoubleEndedIterator;
+//
+//     public Iter!: FusedIterator & DoubleEndedIterator;
+//
+//     public next_back(): Option<this["Item"]> {
+//       return this.iter.next_back();
+//     }
+//
+//     public nth_back(n: number): Option<this["Item"]> {
+//       return this.iter.nth_back(n);
+//     }
+//
+//     public try_rfold<Acc, R extends Try>(
+//       init: Acc,
+//       r: TryConstructor<R>,
+//       fold: (acc: Acc, item: this["Item"]) => R
+//     ): R {
+//       return this.iter.try_rfold(init, r, fold);
+//     }
+//
+//     public rfold<Acc>(init: Acc, fold: (acc: Acc, item: this["Item"]) => Acc): Acc {
+//       return this.iter.rfold(init, fold);
+//     }
+//   };
+//
+// export class FuseForFusedAndDoubleEndedIterator extends ImplFuseForFusedAndDoubleEndedIterator(
+//   ImplFuseForFusedIterator(ImplDoubleEndedIterator(ImplFusedIterator(Fuse)))
+// ) {}
+//
+// export const ImplFuseForExactSizeIterator = <T extends AnyConstructor<Fuse & ExactSizeIterator>>(
+//   Base: T
+// ) =>
+//   class FuseForExactSizeIterator extends Base {
+//     public Self!: FuseForExactSizeIterator;
+//
+//     public Iter!: ExactSizeIterator;
+//
+//     public len(): number {
+//       return this.iter.len();
+//     }
+//
+//     public is_empty(): boolean {
+//       return this.iter.is_empty();
+//     }
+//   };
+//
+// export class FuseForExactSizeIterator extends ImplFuseForExactSizeIterator(
+//   ImplFuseForIterator(ImplExactSizeIterator(Fuse))
+// ) {}
+// export class FuseForExactSizeAndDoubleEndedIterator extends ImplFuseForExactSizeIterator(
+//   ImplFuseForIterator(ImplDoubleEndedIterator(ImplExactSizeIterator(Fuse)))
+// ) {}
+// export class FuseForFusedAndExactSizeIterator extends ImplFuseForExactSizeIterator(
+//   ImplFuseForFusedIterator(ImplExactSizeIterator(ImplFusedIterator(Fuse)))
+// ) {}
+// export class FuseForFusedAndExactSizeAndDoubleEndedIterator extends ImplFuseForFusedAndDoubleEndedIterator(
+//   ImplFuseForExactSizeIterator(
+//     ImplFuseForFusedIterator(
+//       ImplDoubleEndedIterator(ImplExactSizeIterator(ImplFusedIterator(Fuse)))
+//     )
+//   )
+// ) {}
 
 function inspect_fold<T, Acc>(
   f: (t: T) => void,
@@ -2557,22 +2556,22 @@ declare module "./iter" {
     /**
      * Creates an iterator which ends after the first [`None`].
      */
-    fuse<Self extends FusedIterator & ExactSizeIterator & DoubleEndedIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends FusedIterator & ExactSizeIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends FusedIterator & DoubleEndedIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends ExactSizeIterator & DoubleEndedIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends ExactSizeIterator>(this: Self): FuseForExactSizeIterator;
-    fuse<Self extends DoubleEndedIterator>(this: Self): FuseForDoubleEndedIterator;
-    fuse<Self extends FusedIterator>(this: Self): FuseForFusedIterator;
-    fuse(): FuseForIterator;
+    // fuse<Self extends FusedIterator & ExactSizeIterator & DoubleEndedIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends FusedIterator & ExactSizeIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends FusedIterator & DoubleEndedIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends ExactSizeIterator & DoubleEndedIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends ExactSizeIterator>(this: Self): FuseForExactSizeIterator;
+    // fuse<Self extends DoubleEndedIterator>(this: Self): FuseForDoubleEndedIterator;
+    // fuse<Self extends FusedIterator>(this: Self): FuseForFusedIterator;
+    // fuse(): FuseForIterator;
 
     /**
      * Do something with each element of an iterator, passing the value on.
@@ -2725,22 +2724,22 @@ declare module "./iter" {
       f: (st: St, item: Self["Item"]) => Option<B>
     ): Scan;
 
-    fuse<Self extends FusedIterator & ExactSizeIterator & DoubleEndedIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends FusedIterator & ExactSizeIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends FusedIterator & DoubleEndedIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends ExactSizeIterator & DoubleEndedIterator>(
-      this: Self
-    ): FuseForExactSizeAndDoubleEndedIterator;
-    fuse<Self extends ExactSizeIterator>(this: Self): FuseForExactSizeIterator;
-    fuse<Self extends DoubleEndedIterator>(this: Self): FuseForDoubleEndedIterator;
-    fuse<Self extends FusedIterator>(this: Self): FuseForFusedIterator;
-    fuse(): FuseForIterator;
+    // fuse<Self extends FusedIterator & ExactSizeIterator & DoubleEndedIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends FusedIterator & ExactSizeIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends FusedIterator & DoubleEndedIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends ExactSizeIterator & DoubleEndedIterator>(
+    //   this: Self
+    // ): FuseForExactSizeAndDoubleEndedIterator;
+    // fuse<Self extends ExactSizeIterator>(this: Self): FuseForExactSizeIterator;
+    // fuse<Self extends DoubleEndedIterator>(this: Self): FuseForDoubleEndedIterator;
+    // fuse<Self extends FusedIterator>(this: Self): FuseForFusedIterator;
+    // fuse(): FuseForIterator;
 
     inspect<Self extends ExactSizeIterator & DoubleEndedIterator>(
       this: Self,
@@ -2954,42 +2953,42 @@ IteratorBase.prototype.scan = function<Self extends IteratorBase, St, B>(
   return new Scan(this, initial_state, f);
 };
 
-function fuse<Self extends FusedIterator & ExactSizeIterator & DoubleEndedIterator>(
-  this: Self
-): FuseForExactSizeAndDoubleEndedIterator;
-function fuse<Self extends FusedIterator & ExactSizeIterator>(
-  this: Self
-): FuseForExactSizeAndDoubleEndedIterator;
-function fuse<Self extends FusedIterator & DoubleEndedIterator>(
-  this: Self
-): FuseForExactSizeAndDoubleEndedIterator;
-function fuse<Self extends ExactSizeIterator & DoubleEndedIterator>(
-  this: Self
-): FuseForExactSizeAndDoubleEndedIterator;
-function fuse<Self extends ExactSizeIterator>(this: Self): FuseForExactSizeIterator;
-function fuse<Self extends DoubleEndedIterator>(this: Self): FuseForDoubleEndedIterator;
-function fuse<Self extends FusedIterator>(this: Self): FuseForFusedIterator;
-function fuse<Self extends IteratorBase>(this: Self): FuseForIterator;
-function fuse(this: any): any {
-  if (isFusedIterator(this) && isExactSizeIterator(this) && isDoubleEndedIterator(this)) {
-    return new FuseForFusedAndExactSizeAndDoubleEndedIterator(this);
-  } else if (isFusedIterator(this) && isExactSizeIterator(this)) {
-    return new FuseForFusedAndExactSizeIterator(this);
-  } else if (isFusedIterator(this) && isDoubleEndedIterator(this)) {
-    return new FuseForFusedAndDoubleEndedIterator(this);
-  } else if (isExactSizeIterator(this) && isDoubleEndedIterator(this)) {
-    return new FuseForExactSizeAndDoubleEndedIterator(this);
-  } else if (isExactSizeIterator(this)) {
-    return new FuseForExactSizeIterator(this);
-  } else if (isDoubleEndedIterator(this)) {
-    return new FuseForDoubleEndedIterator(this);
-  } else if (isFusedIterator(this)) {
-    return new FuseForFusedIterator(this);
-  } else {
-    return new FuseForIterator(this);
-  }
-}
-IteratorBase.prototype.fuse = fuse;
+// function fuse<Self extends FusedIterator & ExactSizeIterator & DoubleEndedIterator>(
+//   this: Self
+// ): FuseForExactSizeAndDoubleEndedIterator;
+// function fuse<Self extends FusedIterator & ExactSizeIterator>(
+//   this: Self
+// ): FuseForExactSizeAndDoubleEndedIterator;
+// function fuse<Self extends FusedIterator & DoubleEndedIterator>(
+//   this: Self
+// ): FuseForExactSizeAndDoubleEndedIterator;
+// function fuse<Self extends ExactSizeIterator & DoubleEndedIterator>(
+//   this: Self
+// ): FuseForExactSizeAndDoubleEndedIterator;
+// function fuse<Self extends ExactSizeIterator>(this: Self): FuseForExactSizeIterator;
+// function fuse<Self extends DoubleEndedIterator>(this: Self): FuseForDoubleEndedIterator;
+// function fuse<Self extends FusedIterator>(this: Self): FuseForFusedIterator;
+// function fuse<Self extends IteratorBase>(this: Self): FuseForIterator;
+// function fuse(this: any): any {
+//   if (isFusedIterator(this) && isExactSizeIterator(this) && isDoubleEndedIterator(this)) {
+//     return new FuseForFusedAndExactSizeAndDoubleEndedIterator(this);
+//   } else if (isFusedIterator(this) && isExactSizeIterator(this)) {
+//     return new FuseForFusedAndExactSizeIterator(this);
+//   } else if (isFusedIterator(this) && isDoubleEndedIterator(this)) {
+//     return new FuseForFusedAndDoubleEndedIterator(this);
+//   } else if (isExactSizeIterator(this) && isDoubleEndedIterator(this)) {
+//     return new FuseForExactSizeAndDoubleEndedIterator(this);
+//   } else if (isExactSizeIterator(this)) {
+//     return new FuseForExactSizeIterator(this);
+//   } else if (isDoubleEndedIterator(this)) {
+//     return new FuseForDoubleEndedIterator(this);
+//   } else if (isFusedIterator(this)) {
+//     return new FuseForFusedIterator(this);
+//   } else {
+//     return new FuseForIterator(this);
+//   }
+// }
+// IteratorBase.prototype.fuse = fuse;
 
 function inspect<Self extends ExactSizeIterator & DoubleEndedIterator>(
   this: Self,

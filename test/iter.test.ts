@@ -3005,30 +3005,30 @@ describe("Iterator", () => {
     // Cant' check len now because count consumes.
   });
 
-  test("fuse_fold", () => {
-    let xs = [0, 1, 2];
-    let it = xs.iter(); // `FusedIterator`
-    let i = it.fuse().fold(0, (i: number, x: number) => {
-      assert_eq(x, xs[i]);
-      return i + 1;
-    });
-    assert_eq(i, xs.len());
-
-    // FIXME Need to implement FusedIterator to adapters
-    // it = xs.iter(); // `FusedIterator`
-    // i = it.fuse().rfold(xs.len(), (i: number, x: number) => {
-    //   assert_eq(x, xs[i - 1]);
-    //   return i - 1;
-    // })
-    // assert_eq(i, 0);
-    //
-    // let it2 = xs.iter().scan(undefined, (_, x: number) => Some(x)); `!FusedIterator`
-    // i = it2.fuse().fold(0, (i: number, x: number) => {
-    //   assert_eq(x, xs[i]);
-    //   return i + 1;
-    // })
-    // assert_eq(i, xs.len());
-  });
+  // FIXME Need to implement FusedIterator to adapters
+  // test("fuse_fold", () => {
+  //   let xs = [0, 1, 2];
+  //   let it = xs.iter(); // `FusedIterator`
+  //   let i = it.fuse().fold(0, (i: number, x: number) => {
+  //     assert_eq(x, xs[i]);
+  //     return i + 1;
+  //   });
+  //   assert_eq(i, xs.len());
+  //
+  //   it = xs.iter(); // `FusedIterator`
+  //   i = it.fuse().rfold(xs.len(), (i: number, x: number) => {
+  //     assert_eq(x, xs[i - 1]);
+  //     return i - 1;
+  //   })
+  //   assert_eq(i, 0);
+  //
+  //   let it2 = xs.iter().scan(undefined, (_, x: number) => Some(x)); `!FusedIterator`
+  //   i = it2.fuse().fold(0, (i: number, x: number) => {
+  //     assert_eq(x, xs[i]);
+  //     return i + 1;
+  //   })
+  //   assert_eq(i, xs.len());
+  // });
 
   test("once", () => {
     let it = once(42);
