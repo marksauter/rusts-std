@@ -1,6 +1,6 @@
 {
   "name": "@rusts/std",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "Rust std library types for Javascript",
   "keywords": [],
   "main": "dist/std.umd.js",
