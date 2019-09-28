@@ -1,6 +1,5 @@
 import { assert, assert_eq, assert_ne, should_panic } from "../src/macros.test";
 import * as macros from "../src/macros";
-import { isPartialEq } from "../src/std";
 
 test("assert", () => {
   macros.assert(true);

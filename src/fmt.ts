@@ -67,8 +67,6 @@ function fmt_display(t: any): string {
   return fmt_builtin(t);
 }
 
-const FORMAT_TEMPLATE_REGEXP = new RegExp(/{([:?]*)}/g);
-
 enum FormatTrait {
   Display = "",
   Debug = ":?"
@@ -79,7 +77,8 @@ export function format(template: string, ...args: any[]): string {
   let last_index = 0;
   let i = 0;
   let match: ReturnType<typeof RegExp.prototype.exec>;
-  while ((match = FORMAT_TEMPLATE_REGEXP.exec(template)) !== null) {
+  let arg_replace = new RegExp(/{([:?]*)}/g);
+  while ((match = arg_replace.exec(template)) !== null) {
     let arg = args[i];
     let placeholder_index = match.index;
     let placeholder_length = match[0].length;
@@ -99,6 +98,8 @@ export function format(template: string, ...args: any[]): string {
     last_index = placeholder_index + placeholder_length;
     i++;
   }
+
+  ret += template.slice(last_index);
 
   return ret;
 }

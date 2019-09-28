@@ -1,8 +1,8 @@
 export interface Default<T> {
-  new (): T;
+  new (...args: any[]): T;
   default(): T;
 }
-
-export function get_default<T>(t: Default<T>): T {
-  return t.default();
+export interface DefaultConstructor<T> {
+  new (...args: any[]): T;
+  default(): T;
 }

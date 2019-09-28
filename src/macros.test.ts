@@ -1,20 +1,24 @@
-import { isPartialEq } from "./cmp";
+import { PartialEq, isPartialEq } from "./internal";
 
 export function assert(expr: boolean) {
   expect(expr).toBe(true);
 }
 
+export function assert_eq<T extends PartialEq>(left: T, right: T): void;
+export function assert_eq<T>(left: T, right: T): void;
 export function assert_eq(left: any, right: any) {
-  if (isPartialEq(left)) {
+  if (isPartialEq(left) && isPartialEq(right)) {
     expect(left.eq(right)).toBe(true);
   } else {
     expect(left).toEqual(right);
   }
 }
 
+export function assert_ne<T extends PartialEq>(left: T, right: T): void;
+export function assert_ne<T>(left: T, right: T): void;
 export function assert_ne(left: any, right: any) {
-  if (isPartialEq(left)) {
-    expect(left.eq(right)).toBe(false);
+  if (isPartialEq(left) && isPartialEq(right)) {
+    expect(left.ne(right)).toBe(true);
   } else {
     expect(left).not.toEqual(right);
   }

@@ -1,5 +1,5 @@
 import { assert, assert_eq } from "../src/macros.test";
-import { Default, get_default } from "../src/default";
+import { Default } from "../src/default";
 
 class One {
   static default(): number {
@@ -8,5 +8,5 @@ class One {
 }
 
 test("Default", () => {
-  assert_eq(get_default(One), 1);
+  assert_eq(One.default(), 1);
 });
