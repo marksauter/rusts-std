@@ -5,7 +5,7 @@ import {
   // self.ts
   Self,
   // clone.ts
-  ImplClone,
+  Clone,
   clone,
   // fmt.ts
   Debug,
@@ -492,9 +492,8 @@ export function NoneVariant(): None {
 
 export type OptionVariant<T> = Some<T> | None;
 
-export class Option<T>
-  extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(ImplClone(Self))))))
-  implements Debug {
+export class Option<T> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))))
+  implements Clone, Debug {
   public Self!: Option<T>;
 
   protected payload: OptionVariant<T>;
@@ -787,6 +786,8 @@ export class Option<T>
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     switch (this.payload.type) {
       case OptionType.Some:
@@ -872,9 +873,8 @@ export function ErrVariant<E>(value: E): Err<E> {
 
 export type ResultVariant<T, E> = Ok<T> | Err<E>;
 
-export class Result<T, E>
-  extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(ImplClone(Self))))))
-  implements Debug {
+export class Result<T, E> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))))
+  implements Clone, Debug {
   public Self!: Result<T, E>;
 
   protected payload: ResultVariant<T, E>;
@@ -1088,6 +1088,8 @@ export class Result<T, E>
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     switch (this.payload.type) {
       case ResultType.Ok:

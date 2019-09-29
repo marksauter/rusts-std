@@ -7,7 +7,6 @@ import {
   // default.ts
   Default,
   // clone.ts
-  ImplClone,
   Clone,
   clone,
   // debug.ts
@@ -53,253 +52,10 @@ import {
   mul
 } from "./internal";
 
-export interface IteratorFace<T = any> extends Self {
-  Item: T;
+export abstract class IteratorCommon<T> extends Self {
+  public Item!: T;
 
-  /**
-   * Advances the iterator and returns the next value.
-   */
-  next(): Option<this["Item"]>;
-
-  [Symbol.iterator](): Iterator<this["Item"]>;
-
-  /**
-   * Returns the bounds on the remaining length of the iterator.
-   */
-  size_hint(): [number, Option<number>];
-
-  /**
-   * Consumes the iterator, counting the number of iterations and returning it.
-   */
-  count(): number;
-
-  /**
-   * Consumes the iterator, returning the last element.
-   */
-  last(): Option<this["Item"]>;
-
-  /**
-   * Returns the `n`th element of the iterator.
-   */
-  nth(n: number): Option<this["Item"]>;
-
-  /**
-   * Calls a closure on each element of an iterator.
-   */
-  for_each(f: (item: this["Item"]) => void): void;
-
-  /**
-   * Transforms an iterator into a colleciton.
-   */
-  collect<B extends FromIterator<this["Item"]>>(b: B): B;
-  collect(): this["Item"][];
-
-  /**
-   * Consumes an iterator, creating two collections from it.
-   */
-  partition<B extends Extend<this["Item"]>>(
-    f: (item: this["Item"]) => boolean,
-    t: Default<B>
-  ): [B, B];
-  partition(f: (item: this["Item"]) => boolean): [this["Item"][], this["Item"][]];
-
-  /**
-   * Reorder the elements of this iterator *in-place* according to the given
-   * predicate such that all those return `ture` precede all those that return
-   * `false`.
-   * Returns the number of `true` elements found.
-   */
-  // partition_in_place<Self extends DoubleEndedIterator>(predicate: (item: this["Item"]) => boolean): number {
-
-  /**
-   * Checks if the elements of this iterator are partitioned according to the
-   * given predicate, such that all those that return `true` precede all those
-   * that return `false`.
-   */
-  is_partitioned(predicate: (x: this["Item"]) => boolean): boolean;
-
-  /**
-   * An iterator method that applies a function as long as it returns
-   * successfully, producing a single, final value.
-   */
-  try_fold<Acc, R extends Try>(
-    init: Acc,
-    r: TryConstructor<R>,
-    f: (acc: Acc, item: this["Item"]) => R
-  ): R;
-
-  /**
-   * An iterator method that applies a fallible function to each item in the
-   * iterator, stopping at the first error and returning that error.
-   */
-  try_for_each<R extends Try>(r: TryConstructor<R>, f: (x: this["Item"]) => R): R;
-
-  /**
-   * An iterator method that applies a function, producing a single, final value.
-   */
-  fold<Acc>(init: Acc, f: (acc: Acc, x: this["Item"]) => Acc): Acc;
-
-  /**
-   * Test if every element of the iterator matches a predicate.
-   */
-  all(f: (x: this["Item"]) => boolean): boolean;
-
-  /**
-   * Test ifany element of the iterator matches a predicate.
-   */
-  any(f: (x: this["Item"]) => boolean): boolean;
-
-  /**
-   * Searches for an element of an iterator that satisfies a predicate.
-   */
-  find(predicate: (item: this["Item"]) => boolean): Option<this["Item"]>;
-
-  /**
-   * Applies a function to the elements of iterator and returns the first
-   * non-none result.
-   */
-  find_map<B>(f: (x: this["Item"]) => Option<B>): Option<B>;
-
-  /**
-   * Searches for an element in an iterator, returing its index.
-   */
-  position(predicate: (x: this["Item"]) => boolean): Option<number>;
-
-  /**
-   * Searches for an element in an iterator from the right, returning its index.
-   */
-  rposition<Self extends ExactSizeIterator & DoubleEndedIterator>(
-    this: Self,
-    predicate: (x: this["Item"]) => boolean
-  ): Option<number>;
-
-  /**
-   * Returns the maximum element of an iterator.
-   */
-  max(): Option<this["Item"]>;
-
-  /**
-   * Returns the minimum element of an iterator.
-   */
-  min(): Option<this["Item"]>;
-
-  /**
-   * Returns the element that gives the maximum value from the specified
-   * function.
-   */
-  max_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
-
-  /**
-   * Returns the element that gives the maximum value with respect to the
-   * specified comparison function.
-   */
-  max_by(compare: (x: this["Item"], y: this["Item"]) => Ordering): Option<this["Item"]>;
-
-  /**
-   * Returns the element that gives the minimum value from the specified
-   * function.
-   */
-  min_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
-
-  /**
-   * Returns the element that gives the minimum value with respect to the
-   * specified comparison function.
-   */
-  min_by(compare: (x: this["Item"], y: this["Item"]) => Ordering): Option<this["Item"]>;
-
-  // FIXME
-  // try_sum<T extends number, E, R extends TryFace<T, E>, Self extends IteratorFace<R>>(this: Self, r: TryConstructor<R>): R
-  // try_sum<A extends Add, E, R extends TryFace<A, E>, Self extends IteratorFace<R>>(this: Self, r: TryConstructor<R>): R
-
-  sum<A extends Add, Self extends IteratorFace<A>>(): A;
-  sum<Self extends IteratorFace<number>>(): number;
-
-  // try_product<A extends Mul | number, E, R extends TryFace<A, E>, Self extends IteratorFace<R>>(this: Self, r: TryConstructor<R>): R
-
-  product<M extends Mul, Self extends IteratorFace<M>>(): M;
-  product<Self extends IteratorFace<number>>(): number;
-
-  /**
-   * Lexicographically compares the elements of this `Iterator` with those
-   * of another
-   */
-  cmp<I extends IntoIterator<this["Item"]>>(other: I): Ordering;
-
-  /**
-   * Lexicographically compares the elements of this `Iterator` with those
-   * of another
-   */
-  partial_cmp<I extends IntoIterator>(other: I): Option<Ordering>;
-
-  /**
-   * Determines if the elements of this `Iterator` are equal to those of
-   * another
-   */
-  eq<I extends IntoIterator<this["Item"]>>(other: I): boolean;
-  eq(other: this["Self"]): boolean;
-
-  /**
-   * Determines if the elements of this `Iterator` are unequal to those of
-   * another
-   */
-  ne<I extends IntoIterator<this["Item"]>>(other: I): boolean;
-
-  /**
-   * Determines if the elements of this `Iterator` are lexicographically
-   * less than those of another.
-   */
-  lt<I extends IntoIterator<this["Item"]>>(other: I): boolean;
-
-  /**
-   * Determines if the elements of this `Iterator` are lexicographically
-   * less or equal to those of another.
-   */
-  le<I extends IntoIterator<this["Item"]>>(other: I): boolean;
-
-  /**
-   * Determines if the elements of this `Iterator` are lexicographically
-   * greater than those of another.
-   */
-  gt<I extends IntoIterator<this["Item"]>>(other: I): boolean;
-
-  /**
-   * Determines if the elements of this `Iterator` are lexicographically
-   * greater or equal to those of another.
-   */
-  ge<I extends IntoIterator<this["Item"]>>(other: I): boolean;
-
-  /**
-   * Checks if the elements of this iterator are sorted.
-   */
-  is_sorted(): boolean;
-
-  /**
-   * Checks if the elements of this iterator are sorted using the given
-   * comparator function.
-   */
-  is_sorted_by(compare: (x: this["Item"], y: this["Item"]) => Option<Ordering>): boolean;
-
-  /**
-   * Checks if the elements of this iterator are sorted using the given key
-   * extraction function.
-   */
-  is_sorted_by_key<k>(compare: (x: this["Item"]) => k): boolean;
-
-  // IntoIterator
-  IntoIter: this["Self"];
-  into_iter(): this["IntoIter"];
-}
-
-export class IteratorBase extends Self implements IteratorFace {
-  public Self!: IteratorBase;
-
-  public Item: any;
-
-  public next(): Option<this["Item"]> {
-    abstract_panic("IteratorBase", "next");
-    // Unreachable code
-    return None();
-  }
+  public abstract next(): Option<this["Item"]>;
 
   public [Symbol.iterator](): Iterator<this["Item"]> {
     let self = this;
@@ -491,7 +247,7 @@ export class IteratorBase extends Self implements IteratorFace {
   }
 
   public find_map<B>(f: (x: this["Item"]) => Option<B>): Option<B> {
-    return this.try_for_each<LoopState<undefined, this["Item"]>>(LoopState, (x: this["Item"]) => {
+    return this.try_for_each<LoopState<undefined, B>>(LoopState, (x: this["Item"]) => {
       let match = f(x).match();
       switch (match.type) {
         case OptionType.Some:
@@ -516,25 +272,6 @@ export class IteratorBase extends Self implements IteratorFace {
     ).break_value();
   }
 
-  public rposition<Self extends ExactSizeIterator & DoubleEndedIterator>(
-    this: Self,
-    predicate: (x: this["Item"]) => boolean
-  ): Option<number> {
-    let n = this.len();
-    return this.try_rfold<number, LoopState<number, number>>(
-      n,
-      LoopState,
-      (i: number, x: this["Item"]) => {
-        i = i - 1;
-        if (predicate(x)) {
-          return Break(i);
-        } else {
-          return Continue(i);
-        }
-      }
-    ).break_value();
-  }
-
   public max(): Option<this["Item"]> {
     return this.max_by(cmp);
   }
@@ -543,38 +280,28 @@ export class IteratorBase extends Self implements IteratorFace {
     return this.min_by(cmp);
   }
 
-  public max_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
-  public max_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
-  public max_by_key(f: any): Option<this["Item"]> {
-    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
-      le(x_p, y_p)
-    ).map(([_, x]) => x);
-  }
+  public abstract max_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public abstract max_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
 
   public max_by(compare: (x: this["Item"], y: this["Item"]) => Ordering): Option<this["Item"]> {
     return select_fold1(this, (x: this["Item"], y: this["Item"]) => compare(x, y).ne(Greater));
   }
 
-  public min_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
-  public min_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
-  public min_by_key(f: any): Option<this["Item"]> {
-    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
-      gt(x_p, y_p)
-    ).map(([_, x]) => x);
-  }
+  public abstract min_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public abstract min_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
 
   public min_by(compare: (x: this["Item"], y: this["Item"]) => Ordering): Option<this["Item"]> {
     return select_fold1(this, (x: this["Item"], y: this["Item"]) => compare(x, y).eq(Greater));
   }
 
   // FIXME
-  // public try_sum<T extends number, E, R extends TryFace<T, E>, Self extends IteratorFace<R>>(this: Self, r: TryConstructor<R>): R
-  // public try_sum<T extends Add, E, R extends TryFace<T, E>, Self extends IteratorFace<R>>(this: Self, r: TryConstructor<R>): R
-  // public try_sum<T, E, R extends TryFace<T, E>, Self extends IteratorFace<R>>(this: Self, r: TryConstructor<R>): R {
-  //   let map: IteratorFace<Result<T, E>> = this.map((x: R) => x.into_result())
+  // public try_sum<T extends number, E, R extends TryFace<T, E>, Self extends IteratorCommon<R>>(this: Self, r: TryConstructor<R>): R
+  // public try_sum<T extends Add, E, R extends TryFace<T, E>, Self extends IteratorCommon<R>>(this: Self, r: TryConstructor<R>): R
+  // public try_sum<T, E, R extends TryFace<T, E>, Self extends IteratorCommon<R>>(this: Self, r: TryConstructor<R>): R {
+  //   let map: IteratorCommon<Result<T, E>> = this.map((x: R) => x.into_result())
   //   let res: Result<T extends Add ? T["Output"] : number, E> = process_results<T, E, typeof map, T extends Add ? T["Output"] : number>(
   //     map,
-  //     (i: ResultShunt<T, E, typeof map>) => (i as IteratorFace<T>).sum() as T extends Add ? T["Output"] : number,
+  //     (i: ResultShunt<T, E, typeof map>) => (i as IteratorCommon<T>).sum() as T extends Add ? T["Output"] : number,
   //   );
   //   let res_match = res.match();
   //   switch (res_match) {
@@ -585,20 +312,20 @@ export class IteratorBase extends Self implements IteratorFace {
 
   // NOTE: The overload order matters here, need to check for primitive
   // types first.
-  public sum<Self extends IteratorFace<number>>(this: Self): number;
-  public sum<A extends Add, Self extends IteratorFace<A>>(this: Self): A["Output"];
+  public sum<Self extends IteratorCommon<number>>(this: Self): number;
+  public sum<A extends Add, Self extends IteratorCommon<A>>(this: Self): A["Output"];
   public sum(): any {
     return this.fold(0, add);
   }
 
-  // public try_product<R extends Try & Add, Self extends IteratorFace<R>>(r: TryConstructor<R>): R {
+  // public try_product<R extends Try & Add, Self extends IteratorCommon<R>>(r: TryConstructor<R>): R {
   //   return process_results(iter.map((x: R) => x.into_result()), (i: ResultShunt) => i.product());
   // }
 
   // NOTE: The overload order matters here, need to check for primitive
   // types first.
-  public product<Self extends IteratorFace<number>>(this: Self): number;
-  public product<M extends Mul, Self extends IteratorFace<M>>(this: Self): M["Output"];
+  public product<Self extends IteratorCommon<number>>(this: Self): number;
+  public product<M extends Mul, Self extends IteratorCommon<M>>(this: Self): M["Output"];
   public product(): any {
     return this.fold(1, mul);
   }
@@ -630,6 +357,8 @@ export class IteratorBase extends Self implements IteratorFace {
           y = match_y.value;
       }
 
+      // NOTE: ignoring `Variable '_' is used before being assigned.`
+      // @ts-ignore
       let ord = cmp(x, y);
       if (ord.ne(Equal)) {
         return ord;
@@ -664,6 +393,8 @@ export class IteratorBase extends Self implements IteratorFace {
           y = match_y.value;
       }
 
+      // NOTE: ignoring `Variable '_' is used before being assigned.`
+      // @ts-ignore
       let ord = partial_cmp(x, y);
       if (ord.ne(Some(Equal))) {
         return ord;
@@ -674,8 +405,8 @@ export class IteratorBase extends Self implements IteratorFace {
   public eq<I extends IntoIterator<this["Item"]>>(other: I): boolean;
   public eq(other: this["Self"]): boolean;
   public eq(other: any): boolean {
-    let iter: IteratorBase;
-    if (isIntoIterator(other)) {
+    let iter: IteratorCommon<this["Item"]>;
+    if (isIntoIterator<this["Item"]>(other)) {
       iter = other.into_iter();
     } else {
       iter = other;
@@ -701,6 +432,8 @@ export class IteratorBase extends Self implements IteratorFace {
           y = match_y.value;
       }
 
+      // NOTE: ignoring `Variable '_' is used before being assigned.`
+      // @ts-ignore
       if (ne(x, y)) {
         return false;
       }
@@ -769,117 +502,218 @@ export class IteratorBase extends Self implements IteratorFace {
   }
 }
 
-export interface DoubledEndedIteratorFace<T = any> extends IteratorFace<T> {
-  next_back(): Option<this["Item"]>;
+export abstract class IteratorBase<T> extends IteratorCommon<T> {
+  public max_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public max_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public max_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      le(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
 
-  nth_back(n: number): Option<this["Item"]>;
+  public min_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public min_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public min_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      gt(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
+}
 
-  try_rfold<Acc, R extends Try>(
+export abstract class DoubleEndedIterator<T> extends IteratorCommon<T> {
+  public abstract next_back(): Option<this["Item"]>;
+
+  public nth_back(n: number): Option<this["Item"]> {
+    for (let x of this.rev()) {
+      if (n === 0) {
+        return Some(x);
+      }
+      n -= 1;
+    }
+    return None();
+  }
+
+  public try_rfold<Acc, R extends Try>(
     init: Acc,
     r: TryConstructor<R>,
     f: (acc: Acc, item: this["Item"]) => R
-  ): R;
-
-  rfold<Acc>(acc: Acc, f: (acc: Acc, item: this["Item"]) => Acc): Acc;
-
-  rfind(predicate: (item: this["Item"]) => boolean): Option<this["Item"]>;
-}
-
-export const ImplDoubleEndedIterator = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
-  class DoubleEndedIterator extends Base {
-    public Self!: DoubleEndedIterator;
-
-    readonly isDoubleEndedIterator = true;
-
-    // Abstract
-    public next_back(): Option<this["Item"]> {
-      abstract_panic("DoubleEndedIterator", "next_back");
-      // Unreachable code
-      return None();
-    }
-
-    public nth_back(n: number): Option<this["Item"]> {
-      for (let x of this.rev()) {
-        if (n === 0) {
-          return Some(x);
-        }
-        n -= 1;
+  ): R {
+    let acc = init;
+    let next = this.next_back();
+    while (next.is_some()) {
+      let try_acc = f(acc, next.unwrap());
+      if (try_acc.is_error()) {
+        return try_acc;
       }
-      return None();
+      acc = try_acc.unwrap();
+      next = this.next_back();
     }
+    return r.from_okay(acc);
+  }
 
-    public try_rfold<Acc, R extends Try>(
-      init: Acc,
-      r: TryConstructor<R>,
-      f: (acc: Acc, item: this["Item"]) => R
-    ): R {
-      let acc = init;
-      let next = this.next_back();
-      while (next.is_some()) {
-        let try_acc = f(acc, next.unwrap());
-        if (try_acc.is_error()) {
-          return try_acc;
+  public rfold<Acc>(acc: Acc, f: (acc: Acc, item: this["Item"]) => Acc): Acc {
+    return this.try_rfold<Acc, Result<Acc, void>>(acc, Result, (acc: Acc, x: this["Item"]) =>
+      Ok(f(acc, x))
+    ).unwrap();
+  }
+
+  public rfind(predicate: (item: this["Item"]) => boolean): Option<this["Item"]> {
+    return this.try_rfold<undefined, LoopState<undefined, this["Item"]>>(
+      undefined,
+      LoopState,
+      (_: undefined, x: this["Item"]) => {
+        if (predicate(x)) {
+          return Break(x);
+        } else {
+          return Continue(undefined);
         }
-        acc = try_acc.unwrap();
-        next = this.next_back();
       }
-      return r.from_okay(acc);
-    }
+    ).break_value();
+  }
 
-    public rfold<Acc>(acc: Acc, f: (acc: Acc, item: this["Item"]) => Acc): Acc {
-      return this.try_rfold<Acc, Result<Acc, void>>(acc, Result, (acc: Acc, x: this["Item"]) =>
-        Ok(f(acc, x))
-      ).unwrap();
-    }
+  // IteratorCommon
+  public max_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public max_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public max_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      le(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
 
-    public rfind(predicate: (item: this["Item"]) => boolean): Option<this["Item"]> {
-      return this.try_rfold<undefined, LoopState<undefined, Option<this["Item"]>>>(
-        undefined,
-        LoopState,
-        (_: undefined, x: this["Item"]) => {
-          if (predicate(x)) {
-            return Break(x);
-          } else {
-            return Continue(undefined);
-          }
+  public min_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public min_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public min_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      gt(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
+}
+
+export abstract class ExactSizeIterator<T> extends IteratorCommon<T> {
+  public len(): number {
+    let [lower, upper] = this.size_hint();
+    assert_eq(upper, Some(lower));
+    return lower;
+  }
+
+  public is_empty(): boolean {
+    return this.len() === 0;
+  }
+
+  // IteratorCommon
+  public max_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public max_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public max_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      le(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
+
+  public min_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public min_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public min_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      gt(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
+}
+
+export abstract class ExactSizeAndDoubleEndedIterator<T> extends IteratorCommon<T> {
+  // ExactSizeAndDoubleEndedIterator
+  public rposition(predicate: (x: this["Item"]) => boolean): Option<number> {
+    let n = this.len();
+    return this.try_rfold<number, LoopState<number, number>>(
+      n,
+      LoopState,
+      (i: number, x: this["Item"]) => {
+        i = i - 1;
+        if (predicate(x)) {
+          return Break(i);
+        } else {
+          return Continue(i);
         }
-      ).break_value();
+      }
+    ).break_value();
+  }
+
+  // DoubleEndedIterator
+  public abstract next_back(): Option<this["Item"]>;
+
+  public nth_back(n: number): Option<this["Item"]> {
+    for (let x of this.rev()) {
+      if (n === 0) {
+        return Some(x);
+      }
+      n -= 1;
     }
-  };
+    return None();
+  }
 
-export interface DoubleEndedIterator extends Mixin<typeof ImplDoubleEndedIterator> {}
-
-export function isDoubleEndedIterator(i: any): i is DoubleEndedIterator {
-  return typeof i === "object" && i !== null && (i as DoubleEndedIterator).isDoubleEndedIterator;
-}
-
-export interface ExactSizeIteratorFace<T = any> extends IteratorFace<T> {
-  len(): number;
-
-  is_empty(): boolean;
-}
-
-export const ImplExactSizeIterator = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
-  class ExactSizeIterator extends Base {
-    public Self!: ExactSizeIterator;
-
-    readonly isExactSizeIterator = true;
-
-    public len(): number {
-      let [lower, upper] = this.size_hint();
-      assert_eq(upper, Some(lower));
-      return lower;
+  public try_rfold<Acc, R extends Try>(
+    init: Acc,
+    r: TryConstructor<R>,
+    f: (acc: Acc, item: this["Item"]) => R
+  ): R {
+    let acc = init;
+    let next = this.next_back();
+    while (next.is_some()) {
+      let try_acc = f(acc, next.unwrap());
+      if (try_acc.is_error()) {
+        return try_acc;
+      }
+      acc = try_acc.unwrap();
+      next = this.next_back();
     }
+    return r.from_okay(acc);
+  }
 
-    public is_empty(): boolean {
-      return this.len() === 0;
-    }
-  };
+  public rfold<Acc>(acc: Acc, f: (acc: Acc, item: this["Item"]) => Acc): Acc {
+    return this.try_rfold<Acc, Result<Acc, void>>(acc, Result, (acc: Acc, x: this["Item"]) =>
+      Ok(f(acc, x))
+    ).unwrap();
+  }
 
-export interface ExactSizeIterator extends Mixin<typeof ImplExactSizeIterator> {}
+  public rfind(predicate: (item: this["Item"]) => boolean): Option<this["Item"]> {
+    return this.try_rfold<undefined, LoopState<undefined, this["Item"]>>(
+      undefined,
+      LoopState,
+      (_: undefined, x: this["Item"]) => {
+        if (predicate(x)) {
+          return Break(x);
+        } else {
+          return Continue(undefined);
+        }
+      }
+    ).break_value();
+  }
 
-export function isExactSizeIterator(i: any): i is ExactSizeIterator {
-  return typeof i === "object" && i !== null && (i as ExactSizeIterator).isExactSizeIterator;
+  // ExactSizeIterator
+  public len(): number {
+    let [lower, upper] = this.size_hint();
+    assert_eq(upper, Some(lower));
+    return lower;
+  }
+
+  public is_empty(): boolean {
+    return this.len() === 0;
+  }
+
+  // IteratorCommon
+  public max_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public max_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public max_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      le(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
+
+  public min_by_key<B extends Ord>(f: (item: this["Item"]) => B): Option<this["Item"]>;
+  public min_by_key(f: (item: this["Item"]) => this["Item"]): Option<this["Item"]>;
+  public min_by_key(f: any): Option<this["Item"]> {
+    return select_fold1(this.map((x: this["Item"]) => [f(x), x]), ([x_p, _x], [y_p, _y]) =>
+      gt(x_p, y_p)
+    ).map(([_, x]) => x);
+  }
 }
 
 export interface FromIterator<Item> extends Self {
@@ -891,7 +725,10 @@ export function isFromIterator<Item>(t: any): t is FromIterator<Item> {
   return typeof t === "object" && t !== null && (t as FromIterator<Item>).from_iter !== undefined;
 }
 
-export interface IntoIterator<Item = any, IntoIter extends IteratorBase = IteratorBase> {
+export interface IntoIterator<
+  Item = any,
+  IntoIter extends IteratorCommon<Item> = IteratorCommon<Item>
+> {
   // The type of the elements being iterated over.
   Item: Item;
 
@@ -902,7 +739,7 @@ export interface IntoIterator<Item = any, IntoIter extends IteratorBase = Iterat
   into_iter(): this["IntoIter"];
 }
 
-export function isIntoIterator<Item, IntoIter extends IteratorBase = IteratorBase>(
+export function isIntoIterator<Item, IntoIter extends IteratorCommon<Item> = IteratorCommon<Item>>(
   t: any
 ): t is IntoIterator<Item, IntoIter> {
   return (
@@ -920,7 +757,7 @@ export interface Extend<Item> {
 /**
  * An iterator that always continues to yield `None` when exhausted.
  */
-// export const ImplFusedIterator = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
+// export const ImplFusedIterator = <T extends AnyConstructor<IteratorCommon>>(Base: T) =>
 //   class FusedIterator extends Base {
 //     readonly isFusedIterator = true;
 //   };
@@ -937,7 +774,7 @@ export interface Extend<Item> {
  * This trait must only be implements when the contract is upheld.
  * Consumers of this trait must inspect [`.size_hint`]'s upper bound.
  */
-// export const ImplTrustedLen = <T extends AnyConstructor<IteratorBase>>(Base: T) =>
+// export const ImplTrustedLen = <T extends AnyConstructor<IteratorCommon>>(Base: T) =>
 //   class TrustedLen extends Base {};
 //
 // export type TrustedLen = Mixin<typeof ImplTrustedLen>;
@@ -962,7 +799,7 @@ export interface Extend<Item> {
 //
 // export type TrustedRandomAccess = Mixin<typeof ImplTrustedRandomAccess>;
 
-export function process_results<T, E, I extends IteratorFace<Result<T, E>>, U>(
+export function process_results<T, E, I extends IteratorCommon<Result<T, E>>, U>(
   iter: I,
   f: (shunt: ResultShunt<T, E, I>) => U
 ): Result<U, E> {
@@ -972,7 +809,7 @@ export function process_results<T, E, I extends IteratorFace<Result<T, E>>, U>(
   return error.map(() => value);
 }
 
-export class ResultShunt<T, E, I extends IteratorFace<Result<T, E>>> extends IteratorBase {
+export class ResultShunt<T, E, I extends IteratorCommon<Result<T, E>>> extends IteratorBase<T> {
   public Self!: ResultShunt<T, E, I>;
 
   public Iter!: I;
@@ -1031,7 +868,9 @@ export function repeat<T>(element: T): Repeat<T> {
 /**
  * An interator that repeats an element endlessly.
  */
-export class Repeat<T> extends ImplDoubleEndedIterator(IteratorBase) implements Debug {
+export class Repeat<T> extends DoubleEndedIterator<T> implements Debug {
+  public Self!: Repeat<T>;
+
   public Item!: T;
 
   public element: T;
@@ -1070,7 +909,9 @@ export function repeat_with<T>(repeater: () => T): RepeatWith<T> {
  * An interator that repeats an element of type `T` endlessly by
  * applying the provided closure `() => T`.
  */
-export class RepeatWith<T> extends IteratorBase implements Debug {
+export class RepeatWith<T> extends IteratorBase<T> implements Debug {
+  public Self!: RepeatWith<T>;
+
   public Item!: T;
 
   public repeater: () => T;
@@ -1103,9 +944,9 @@ export function empty<T>(): Empty<T> {
 /**
  * An interator that yields nothing.
  */
-export class Empty<T>
-  extends ImplExactSizeIterator(ImplDoubleEndedIterator(ImplClone(IteratorBase)))
-  implements Debug {
+export class Empty<T> extends ExactSizeAndDoubleEndedIterator<T> implements Debug {
+  public Self!: Empty<T>;
+
   public Item!: T;
 
   public constructor() {
@@ -1132,6 +973,10 @@ export class Empty<T>
     return 0;
   }
 
+  // Clone
+
+  readonly isClone = true;
+
   public clone(): Empty<T> {
     return new Empty();
   }
@@ -1151,8 +996,9 @@ export function once<T>(value: T): Once<T> {
 /**
  * An interator that yields an element exactly once.
  */
-export class Once<T> extends ImplExactSizeIterator(ImplDoubleEndedIterator(ImplClone(IteratorBase)))
-  implements Debug {
+export class Once<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone, Debug {
+  public Self!: Once<T>;
+
   public Item!: T;
 
   private inner: OptionIntoIter<T>;
@@ -1178,6 +1024,9 @@ export class Once<T> extends ImplExactSizeIterator(ImplDoubleEndedIterator(ImplC
     return this.inner.len();
   }
 
+  // Clone
+  readonly isClone = true;
+
   public clone(): Once<T> {
     return new Once(this.inner.clone());
   }
@@ -1199,8 +1048,9 @@ export function once_with<T>(gen: () => T): OnceWith<T> {
  * An iterator that yields a single element of type `T` by applying the provided
  * closure `() => T`.
  */
-export class OnceWith<T> extends ImplExactSizeIterator(ImplDoubleEndedIterator(IteratorBase))
-  implements Debug {
+export class OnceWith<T> extends ExactSizeAndDoubleEndedIterator<T> implements Debug {
+  public Self!: OnceWith<T>;
+
   public Item!: T;
 
   private gen: Option<() => T>;
@@ -1242,7 +1092,7 @@ export function from_fn<T>(f: () => Option<T>): FromFn<T> {
 /**
  * An iterator where each iteration calls the provided closure `() => Option<T>`
  */
-export class FromFn<T> extends IteratorBase implements Debug {
+export class FromFn<T> extends IteratorBase<T> implements Debug {
   public Item!: T;
 
   public f: () => Option<T>;
@@ -1272,7 +1122,7 @@ export function successors<T>(first: Option<T>, succ: (t: T) => Option<T>): Succ
 /**
  * An iterator where each successive item is computed based on the preceding one.
  */
-export class Successors<T> extends ImplDoubleEndedIterator(IteratorBase) implements Debug {
+export class Successors<T> extends IteratorBase<T> implements Debug {
   public Item!: T;
 
   private first: Option<T>;
@@ -1475,9 +1325,7 @@ Option.prototype[Symbol.iterator] = function() {
   return this.iter()[Symbol.iterator]();
 };
 
-class OptionItem<T> extends ImplExactSizeIterator(
-  ImplDoubleEndedIterator(ImplClone(IteratorBase))
-) {
+class OptionItem<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone {
   public Self!: OptionItem<T>;
 
   private opt: Option<T>;
@@ -1510,14 +1358,14 @@ class OptionItem<T> extends ImplExactSizeIterator(
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     return new OptionItem(this.opt.clone());
   }
 }
 
-class OptionIter<T> extends ImplExactSizeIterator(
-  ImplDoubleEndedIterator(ImplClone(IteratorBase))
-) {
+class OptionIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone {
   public Self!: OptionIter<T>;
 
   private inner: OptionItem<T>;
@@ -1544,14 +1392,14 @@ class OptionIter<T> extends ImplExactSizeIterator(
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     return new OptionIter(this.inner.clone());
   }
 }
 
-class OptionIntoIter<T> extends ImplExactSizeIterator(
-  ImplDoubleEndedIterator(ImplClone(IteratorBase))
-) {
+class OptionIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone {
   public Self!: OptionIntoIter<T>;
 
   private inner: OptionItem<T>;
@@ -1578,6 +1426,8 @@ class OptionIntoIter<T> extends ImplExactSizeIterator(
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     return new OptionIntoIter(this.inner.clone());
   }
@@ -1593,9 +1443,7 @@ Result.prototype[Symbol.iterator] = function() {
   return this.iter()[Symbol.iterator]();
 };
 
-class ResultIter<T> extends ImplExactSizeIterator(
-  ImplDoubleEndedIterator(ImplClone(IteratorBase))
-) {
+class ResultIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone {
   public Self!: ResultIter<T>;
 
   private inner: OptionItem<T>;
@@ -1622,14 +1470,14 @@ class ResultIter<T> extends ImplExactSizeIterator(
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     return new ResultIter(this.inner.clone());
   }
 }
 
-class ResultIntoIter<T> extends ImplExactSizeIterator(
-  ImplDoubleEndedIterator(ImplClone(IteratorBase))
-) {
+class ResultIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone {
   public Self!: ResultIntoIter<T>;
 
   private inner: OptionItem<T>;
@@ -1656,14 +1504,14 @@ class ResultIntoIter<T> extends ImplExactSizeIterator(
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     return new ResultIntoIter(this.inner.clone());
   }
 }
 
-export class ArrayIntoIter<T>
-  extends ImplExactSizeIterator(ImplDoubleEndedIterator(ImplClone(IteratorBase)))
-  implements Debug {
+export class ArrayIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone, Debug {
   public Self!: ArrayIntoIter<T>;
 
   private buf: Array<T>;
@@ -1815,7 +1663,7 @@ export class ArrayIntoIter<T>
     ).break_value();
   }
 
-  // public partition_in_place<T extends Eq, Self extends IteratorFace<T>>(
+  // public partition_in_place<T extends Eq, Self extends IteratorCommon<T>>(
   //   predicate: ()
   // ): this["Self"] {
   //   let compare = (): (left: this["Item"], right: this["Item"]) => number {
@@ -1907,6 +1755,8 @@ export class ArrayIntoIter<T>
   }
 
   // Clone
+  readonly isClone = true;
+
   public clone(): this["Self"] {
     return new ArrayIntoIter(this.as_array());
   }
@@ -1951,7 +1801,7 @@ Array.prototype.extend = function(iter) {
 };
 
 // Selects an element from an iterator based on the given "comparison" function.
-function select_fold1<I extends IteratorBase>(
+function select_fold1<T, I extends IteratorCommon<T>>(
   it: I,
   f: (i1: I["Item"], i2: I["Item"]) => boolean
 ): Option<I["Item"]> {

@@ -1,28 +1,15 @@
-import { AnyConstructor, Mixin, Self, abstract_panic } from "./internal";
+import { Self } from "./internal";
 const clonedeep = require("lodash.clonedeep");
 
-export const ImplClone = <T extends AnyConstructor<Self>>(Base: T) =>
-  class Clone extends Base {
-    readonly isClone = true;
+export interface Clone extends Self {
+  readonly isClone: true;
 
-    // Returns a copy of the value.
-    //
-    // Abstract
-    public clone(): this["Self"] {
-      abstract_panic("Clone", "clone");
-      // Unreachable code
-      return (undefined as unknown) as this["Self"];
-    }
+  // Returns a copy of the value.
+  clone(): this["Self"];
 
-    // Performs copy-assignment from `source`.
-    //
-    // Abstract
-    public clone_from(source: this["Self"]) {
-      abstract_panic("Clone", "clone_from");
-    }
-  };
-
-export type Clone = Mixin<typeof ImplClone>;
+  // Performs copy-assignment from `source`.
+  clone_from?(source: this["Self"]): void;
+}
 
 export function isClone(t: any): t is Clone {
   return typeof t === "object" && t !== null && (t as Clone).isClone;
