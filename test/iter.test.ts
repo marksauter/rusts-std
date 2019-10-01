@@ -1,8 +1,7 @@
 import {
   Self,
   IteratorBase,
-  IteratorFace,
-  ImplDoubleEndedIterator,
+  DoubleEndedIterator,
   Option,
   Some,
   None,
@@ -254,7 +253,7 @@ describe("Iterator", () => {
   });
 
   test("iterator_chain_size_hint", () => {
-    class Iter extends ImplDoubleEndedIterator(IteratorBase) {
+    class Iter extends DoubleEndedIterator<undefined> {
       Self!: Iter;
       Item!: undefined;
 
@@ -292,28 +291,32 @@ describe("Iterator", () => {
     // so after calling `.next()` once, the iterator is empty and the
     // state is `ChainState.Back`. `.size_hint()` should now disregard
     // the size hint of the left iterator
-    let iter = new Iter(true).chain(once(undefined));
-    assert_eq(iter.next(), Some(undefined));
-    assert_eq(iter.size_hint(), [0, Some(0)]);
+    {
+      let iter = new Iter(true).chain(once(undefined));
+      assert_eq(iter.next(), Some(undefined));
+      assert_eq(iter.size_hint(), [0, Some(0)]);
+    }
 
-    iter = once(undefined).chain(new Iter(true));
-    assert_eq(iter.next_back(), Some(undefined));
-    assert_eq(iter.size_hint(), [0, Some(0)]);
+    {
+      let iter = once(undefined).chain(new Iter(true));
+      assert_eq(iter.next_back(), Some(undefined));
+      assert_eq(iter.size_hint(), [0, Some(0)]);
+    }
   });
 
   test("zip_nth", () => {
     let xs = [0, 1, 2, 4, 5];
     let ys = [10, 11, 12];
 
-    let it = xs.iter().zip(ys);
-    assert_eq(it.nth(0), Some([0, 10]));
-    assert_eq(it.nth(1), Some([2, 12]));
+    let it = xs.iter().zip(ys.iter());
+    assert_eq(it.nth(0), Some<[number, number]>([0, 10]));
+    assert_eq(it.nth(1), Some<[number, number]>([2, 12]));
     assert_eq(it.nth(0), None());
 
-    it = xs.iter().zip(ys);
+    it = xs.iter().zip(ys.iter());
     assert_eq(it.nth(3), None());
 
-    it = ys.iter().zip(xs);
+    it = ys.iter().zip(xs.iter());
     assert_eq(it.nth(3), None());
   });
 
@@ -338,7 +341,7 @@ describe("Iterator", () => {
       )
       .skip(1)
       .nth(3);
-    assert_eq(value, Some([50, 6000]));
+    assert_eq(value, Some<[number, number]>([50, 6000]));
     assert_eq(a, [1, 2, 3, 4, 5]);
     assert_eq(b, [200, 300, 400, 500, 600]);
   });
@@ -400,7 +403,7 @@ describe("Iterator", () => {
   test("iterator_step_by_nth_overflow", () => {
     // TODO: check to see if this test is actually doing anything...
 
-    class Test extends IteratorBase {
+    class Test extends IteratorBase<number> {
       Item!: number;
       0: number;
       constructor(v: number) {
@@ -408,11 +411,11 @@ describe("Iterator", () => {
         this[0] = v;
       }
       next(): Option<this["Item"]> {
-        return Some(21);
+        return Some<number>(21);
       }
       nth(n: number): Option<this["Item"]> {
         this[0] += n + 1;
-        return Some(42);
+        return Some<number>(42);
       }
     }
 
@@ -440,18 +443,18 @@ describe("Iterator", () => {
 
   test("iterator_step_by_nth_try_fold", () => {
     let it1 = range_from(0).step_by(10);
-    assert_eq(it1.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(it1.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(it1.next(), Some(60));
-    assert_eq(it1.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(it1.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(it1.next(), Some(90));
 
     it1 = range_from(100).step_by(10);
-    assert_eq(it1.try_fold(50, Option, i8_checked_add), None());
+    assert_eq(it1.try_fold<number, Option<number>>(50, Option, i8_checked_add), None());
     assert_eq(it1.next(), Some(110));
 
     let it2 = range_inclusive(100, 100).step_by(10);
     assert_eq(it2.next(), Some(100));
-    assert_eq(it2.try_fold(0, Option, i8_checked_add), Some(0));
+    assert_eq(it2.try_fold<number, Option<number>>(0, Option, i8_checked_add), Some(0));
   });
 
   test("step_by_zero", () => {
@@ -461,8 +464,8 @@ describe("Iterator", () => {
   });
 
   test("step_by_size_hint", () => {
-    class StubSizeHint extends IteratorBase {
-      Item!: void;
+    class StubSizeHint extends IteratorBase<undefined> {
+      Item!: undefined;
       0: number;
       1: Option<number>;
       constructor(x: number, y: Option<number>) {
@@ -588,7 +591,6 @@ describe("Iterator", () => {
     assert_eq(i, 3);
   });
 
-  // TODO: "iterator_enumerate_nth_back"
   test("iterator_enumerate_nth_back", () => {
     let xs = [0, 1, 2, 3, 4, 5];
     let it = xs.iter().enumerate();
@@ -631,9 +633,9 @@ describe("Iterator", () => {
     let xs = [0, 1, 2, 3, 4, 5];
     let it = xs.iter().enumerate();
     // steal a couple to get an interesting offset
-    assert_eq(it.next(), Some([0, 0]));
-    assert_eq(it.next(), Some([1, 1]));
-    let i = it.fold(2, (i, [j, x]) => {
+    assert_eq(it.next(), Some<[number, number]>([0, 0]));
+    assert_eq(it.next(), Some<[number, number]>([1, 1]));
+    let i = it.fold<number>(2, (i: number, [j, x]: [number, number]) => {
       assert_eq(i, j);
       assert_eq(x, xs[j]);
       return i + 1;
@@ -641,8 +643,8 @@ describe("Iterator", () => {
     assert_eq(i, xs.len());
 
     it = xs.iter().enumerate();
-    assert_eq(it.next(), Some([0, 0]));
-    i = it.rfold(xs.len() - 1, (i, [j, x]) => {
+    assert_eq(it.next(), Some<[number, number]>([0, 0]));
+    i = it.rfold(xs.len() - 1, (i: number, [j, x]: [number, number]) => {
       assert_eq(i, j);
       assert_eq(x, xs[j]);
       return i - 1;
@@ -665,7 +667,7 @@ describe("Iterator", () => {
     let xs = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     let ys = [0, 2, 4, 6, 8];
     let it = xs.iter().filter((x: number) => x % 2 === 0);
-    let i = it.fold(0, (i: number, x: number) => {
+    let i = it.fold<number>(0, (i: number, x: number) => {
       assert_eq(x, ys[i]);
       return i + 1;
     });
@@ -819,7 +821,7 @@ describe("Iterator", () => {
     let xs = [0, 1, 2, 3, 4, 5];
     let it = xs.iter().peekable();
     assert_eq(it.peek(), Some(0));
-    let i = it.fold(0, (i: number, x: number) => {
+    let i = it.fold<number>(0, (i: number, x: number) => {
       assert_eq(x, xs[i]);
       return i + 1;
     });
@@ -830,14 +832,14 @@ describe("Iterator", () => {
     let xs = [0, 1, 2, 3, 4, 5];
     let it = xs.iter().peekable();
     assert_eq(it.peek(), Some(0));
-    let i = it.rfold(0, (i: number, x: number) => {
+    let i = it.rfold<number>(0, (i: number, x: number) => {
       assert_eq(x, xs[xs.len() - 1 - i]);
       return i + 1;
     });
     assert_eq(i, xs.len());
   });
 
-  class CycleIter<T> extends IteratorBase {
+  class CycleIter<T> extends IteratorBase<T> {
     Self!: CycleIter<T>;
 
     Item!: T;
@@ -930,7 +932,7 @@ describe("Iterator", () => {
     let xs = [0, 1, 2, 3, 5, 13, 15, 16, 17, 19];
     let ys = [15, 16, 17, 19];
     let it = xs.iter().skip_while((x: number) => x < 15);
-    let i = it.fold(0, (i, x) => {
+    let i = it.fold<number>(0, (i: number, x: number) => {
       assert_eq(x, ys[i]);
       return i + 1;
     });
@@ -938,7 +940,7 @@ describe("Iterator", () => {
 
     it = xs.iter().skip_while((x: number) => x < 15);
     assert_eq(it.next(), Some(ys[0])); // process skips before folding
-    i = it.fold(1, (i, x) => {
+    i = it.fold<number>(1, (i: number, x: number) => {
       assert_eq(x, ys[i]);
       return i + 1;
     });
@@ -1123,7 +1125,7 @@ describe("Iterator", () => {
     let ys = [13, 15, 16, 17, 19, 20, 30];
 
     let it = xs.iter().skip(5);
-    let i = it.fold(0, (i: number, x: number) => {
+    let i = it.fold<number>(0, (i: number, x: number) => {
       assert_eq(x, ys[i]);
       return i + 1;
     });
@@ -1131,7 +1133,7 @@ describe("Iterator", () => {
 
     it = xs.iter().skip(5);
     assert_eq(it.next(), Some(ys[0])); // process skips before folding
-    i = it.fold(1, (i: number, x: number) => {
+    i = it.fold<number>(1, (i: number, x: number) => {
       assert_eq(x, ys[i]);
       return i + 1;
     });
@@ -1300,7 +1302,7 @@ describe("Iterator", () => {
   test("iterator_flat_map", () => {
     let xs = [0, 3, 6];
     let ys = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-    let it = xs.iter().flat_map((x: number) =>
+    let it = xs.iter().flat_map_down((x: number) =>
       range_from(x)
         .step_by(1)
         .take(3)
@@ -1319,7 +1321,7 @@ describe("Iterator", () => {
     let it = xs.iter().flat_map((x: number) => range(x, x + 3));
     assert_eq(it.next(), Some(0));
     assert_eq(it.next_back(), Some(8));
-    let i = it.fold(0, (i: number, x: number) => {
+    let i = it.fold<number>(0, (i: number, x: number) => {
       assert_eq(x, ys[i]);
       return i + 1;
     });
@@ -1363,7 +1365,7 @@ describe("Iterator", () => {
       .flatten();
     assert_eq(it.next(), Some(0));
     assert_eq(it.next_back(), Some(8));
-    let i = it.fold(0, (i: number, x: number) => {
+    let i = it.fold<number>(0, (i: number, x: number) => {
       assert_eq(x, ys[i]);
       return i + 1;
     });
@@ -1400,7 +1402,7 @@ describe("Iterator", () => {
     let n = 0;
     {
       let it = xs.iter().inspect(_ => (n += 1));
-      let i = it.fold(0, (i, x) => {
+      let i = it.fold<number>(0, (i: number, x: number) => {
         assert_eq(x, xs[i]);
         return i + 1;
       });
@@ -1441,7 +1443,7 @@ describe("Iterator", () => {
     assert_eq(
       empty<number>()
         .cycle()
-        .fold(0, (acc: number, x: number) => acc + x),
+        .fold<number>(0, (acc: number, x: number) => acc + x),
       0
     );
 
@@ -1450,7 +1452,7 @@ describe("Iterator", () => {
         .cycle()
         .skip(1)
         .take(4)
-        .fold(0, (acc: number, x: number) => acc + x),
+        .fold<number>(0, (acc: number, x: number) => acc + x),
       4
     );
 
@@ -1910,7 +1912,7 @@ describe("Iterator", () => {
     assert_eq(
       vi
         .clone()
-        .zip(v2)
+        .zip(v2.iter())
         .size_hint(),
       [3, Some(3)]
     );
@@ -2120,7 +2122,7 @@ describe("Iterator", () => {
     );
   });
 
-  // TODO: look into test_by_ref
+  //   // TODO: look into test_by_ref
 
   test("rev", () => {
     let xs = [2, 4, 6, 8, 10, 12, 14, 16];
@@ -2162,7 +2164,7 @@ describe("Iterator", () => {
           return x;
         })
         .cloned()
-        .zip([1]);
+        .zip([1].iter());
       for (let _ of iter) {
       }
     }
@@ -2187,13 +2189,13 @@ describe("Iterator", () => {
       .iter()
       .cloned()
       .enumerate();
-    assert_eq(it.next(), Some([0, 1]));
-    assert_eq(it.next(), Some([1, 2]));
-    assert_eq(it.next_back(), Some([5, 6]));
-    assert_eq(it.next_back(), Some([4, 5]));
-    assert_eq(it.next_back(), Some([3, 4]));
-    assert_eq(it.next_back(), Some([2, 3]));
-    assert_eq(it.next(), None());
+    assert_eq(it.next(), Some<[number, number]>([0, 1]));
+    assert_eq(it.next(), Some<[number, number]>([1, 2]));
+    assert_eq(it.next_back(), Some<[number, number]>([5, 6]));
+    assert_eq(it.next_back(), Some<[number, number]>([4, 5]));
+    assert_eq(it.next_back(), Some<[number, number]>([3, 4]));
+    assert_eq(it.next_back(), Some<[number, number]>([2, 3]));
+    assert_eq(it.next(), None<[number, number]>());
   });
 
   test("double_ended_zip", () => {
@@ -2202,10 +2204,10 @@ describe("Iterator", () => {
     let a = xs.iter().cloned();
     let b = ys.iter().cloned();
     let it = a.zip(b);
-    assert_eq(it.next(), Some([1, 1]));
-    assert_eq(it.next(), Some([2, 2]));
-    assert_eq(it.next_back(), Some([4, 7]));
-    assert_eq(it.next_back(), Some([3, 3]));
+    assert_eq(it.next(), Some<[number, number]>([1, 1]));
+    assert_eq(it.next(), Some<[number, number]>([2, 2]));
+    assert_eq(it.next_back(), Some<[number, number]>([4, 7]));
+    assert_eq(it.next_back(), Some<[number, number]>([3, 3]));
     assert_eq(it.next(), None());
   });
 
@@ -2246,7 +2248,7 @@ describe("Iterator", () => {
 
     // TODO: make sure this works after integrating FusedIterator
     // test that .chain() is well behaved with an unfused iterator
-    class CrazyIterator extends ImplDoubleEndedIterator(IteratorBase) {
+    class CrazyIterator extends DoubleEndedIterator<number> {
       Self!: CrazyIterator;
       Item!: number;
       0: boolean;
@@ -2790,35 +2792,47 @@ describe("Iterator", () => {
     );
 
     let it = range_inclusive(44, 50);
-    assert_eq(it.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(it.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(it, range_inclusive(47, 50));
-    assert_eq(it.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(it.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(it, range_inclusive(50, 50));
-    assert_eq(it.try_fold(0, Option, i8_checked_add), Some(50));
+    assert_eq(it.try_fold<number, Option<number>>(0, Option, i8_checked_add), Some(50));
     assert(it.is_empty());
-    assert_eq(it.try_fold(0, Option, i8_checked_add), Some(0));
+    assert_eq(it.try_fold<number, Option<number>>(0, Option, i8_checked_add), Some(0));
     assert(it.is_empty());
 
     it = range_inclusive(40, 47);
-    assert_eq(it.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(it.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(it, range_inclusive(40, 44));
-    assert_eq(it.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(it.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(it, range_inclusive(40, 41));
-    assert_eq(it.try_rfold(0, Option, i8_checked_add), Some(81));
+    assert_eq(it.try_rfold<number, Option<number>>(0, Option, i8_checked_add), Some(81));
     assert(it.is_empty());
-    assert_eq(it.try_rfold(0, Option, i8_checked_add), Some(0));
-    assert(it.is_empty());
-
-    it = range_inclusive(10, 20);
-    assert_eq(it.try_fold(0, Option, (a: number, b: number) => Some(a + b)), Some(165));
-    assert(it.is_empty());
-    assert_eq(it.try_fold(0, Option, (a: number, b: number) => Some(a + b)), Some(0));
+    assert_eq(it.try_rfold<number, Option<number>>(0, Option, i8_checked_add), Some(0));
     assert(it.is_empty());
 
     it = range_inclusive(10, 20);
-    assert_eq(it.try_rfold(0, Option, (a: number, b: number) => Some(a + b)), Some(165));
+    assert_eq(
+      it.try_fold<number, Option<number>>(0, Option, (a: number, b: number) => Some(a + b)),
+      Some(165)
+    );
     assert(it.is_empty());
-    assert_eq(it.try_rfold(0, Option, (a: number, b: number) => Some(a + b)), Some(0));
+    assert_eq(
+      it.try_fold<number, Option<number>>(0, Option, (a: number, b: number) => Some(a + b)),
+      Some(0)
+    );
+    assert(it.is_empty());
+
+    it = range_inclusive(10, 20);
+    assert_eq(
+      it.try_rfold<number, Option<number>>(0, Option, (a: number, b: number) => Some(a + b)),
+      Some(165)
+    );
+    assert(it.is_empty());
+    assert_eq(
+      it.try_rfold<number, Option<number>>(0, Option, (a: number, b: number) => Some(a + b)),
+      Some(0)
+    );
     assert(it.is_empty());
   });
 
@@ -3009,7 +3023,7 @@ describe("Iterator", () => {
   // test("fuse_fold", () => {
   //   let xs = [0, 1, 2];
   //   let it = xs.iter(); // `FusedIterator`
-  //   let i = it.fuse().fold(0, (i: number, x: number) => {
+  //   let i = it.fuse().fold<number>(0, (i: number, x: number) => {
   //     assert_eq(x, xs[i]);
   //     return i + 1;
   //   });
@@ -3023,7 +3037,7 @@ describe("Iterator", () => {
   //   assert_eq(i, 0);
   //
   //   let it2 = xs.iter().scan(undefined, (_, x: number) => Some(x)); `!FusedIterator`
-  //   i = it2.fuse().fold(0, (i: number, x: number) => {
+  //   i = it2.fuse().fold<number>(0, (i: number, x: number) => {
   //     assert_eq(x, xs[i]);
   //     return i + 1;
   //   })
@@ -3076,23 +3090,30 @@ describe("Iterator", () => {
     assert_eq(
       range(1, 10)
         .rev()
-        .try_fold(7, Option, f),
-      range(1, 10).try_rfold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(1, 10).try_rfold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(1, 10)
         .rev()
-        .try_rfold(7, Option, f),
-      range(1, 10).try_fold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(1, 10).try_fold<number, Option<number>>(7, Option, f)
     );
 
     let a = [10, 20, 30, 40, 100, 60, 70, 80, 90];
     let iter = a.iter().rev();
-    assert_eq(iter.try_fold(0, Option, (acc: number, x: number) => i8_checked_add(acc, x)), None());
+    assert_eq(
+      iter.try_fold<number, Option<number>>(0, Option, (acc: number, x: number) =>
+        i8_checked_add(acc, x)
+      ),
+      None()
+    );
     assert_eq(iter.next(), Some(70));
     iter = a.iter().rev();
     assert_eq(
-      iter.try_rfold(0, Option, (acc: number, x: number) => i8_checked_add(acc, x)),
+      iter.try_rfold<number, Option<number>>(0, Option, (acc: number, x: number) =>
+        i8_checked_add(acc, x)
+      ),
       None()
     );
     assert_eq(iter.next_back(), Some(60));
@@ -3105,24 +3126,31 @@ describe("Iterator", () => {
       a
         .iter()
         .cloned()
-        .try_fold(7, Option, f),
-      a.iter().try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      a.iter().try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       a
         .iter()
         .cloned()
-        .try_rfold(7, Option, f),
-      a.iter().try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      a.iter().try_rfold<number, Option<number>>(7, Option, f)
     );
 
     a = [10, 20, 30, 40, 100, 60, 70, 80, 90];
     let iter = a.iter().cloned();
-    assert_eq(iter.try_fold(0, Option, (acc: number, x: number) => i8_checked_add(acc, x)), None());
+    assert_eq(
+      iter.try_fold<number, Option<number>>(0, Option, (acc: number, x: number) =>
+        i8_checked_add(acc, x)
+      ),
+      None()
+    );
     assert_eq(iter.next(), Some(60));
     iter = a.iter().cloned();
     assert_eq(
-      iter.try_rfold(0, Option, (acc: number, x: number) => i8_checked_add(acc, x)),
+      iter.try_rfold<number, Option<number>>(0, Option, (acc: number, x: number) =>
+        i8_checked_add(acc, x)
+      ),
       None()
     );
     assert_eq(iter.next_back(), Some(70));
@@ -3132,12 +3160,15 @@ describe("Iterator", () => {
     let c = () => range(0, 10).chain(range(10, 20));
 
     let f = (acc: number, x: number) => checked_add(2 * acc, x);
-    assert_eq(c().try_fold(7, Option, f), range(0, 20).try_fold(7, Option, f));
     assert_eq(
-      c().try_rfold(7, Option, f),
+      c().try_fold<number, Option<number>>(7, Option, f),
+      range(0, 20).try_fold<number, Option<number>>(7, Option, f)
+    );
+    assert_eq(
+      c().try_rfold<number, Option<number>>(7, Option, f),
       range(0, 20)
         .rev()
-        .try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f)
     );
     {
       let iter = c();
@@ -3146,7 +3177,7 @@ describe("Iterator", () => {
       assert_eq(iter.position((x: number) => x === 13), Some(6));
       assert_eq(iter.next(), Some(14)); // stopped in back, state Back
       assert_eq(
-        iter.try_fold(0, Option, (acc: number, x: number) => Some(acc + x)),
+        iter.try_fold<number, Option<number>>(0, Option, (acc: number, x: number) => Some(acc + x)),
         Some(range(15, 20).sum())
       );
     }
@@ -3157,19 +3188,25 @@ describe("Iterator", () => {
       assert_eq(iter.position((x: number) => x === 5), Some(8));
       assert_eq(iter.next(), Some(4)); // stopped in front, state Front
       assert_eq(
-        iter.try_fold(0, Option, (acc: number, x: number) => Some(acc + x)),
+        iter.try_fold<number, Option<number>>(0, Option, (acc: number, x: number) => Some(acc + x)),
         Some(range(0, 4).sum())
       );
     }
     {
       let iter = c();
       iter.rev().nth(14); // skip the last 15, ending in state Front
-      assert_eq(iter.try_fold(7, Option, f), range(0, 5).try_fold(7, Option, f));
+      assert_eq(
+        iter.try_fold<number, Option<number>>(7, Option, f),
+        range(0, 5).try_fold<number, Option<number>>(7, Option, f)
+      );
     }
     {
       let iter = c();
       iter.nth(14); // skip the first 15, ending in state Back
-      assert_eq(iter.try_fold(7, Option, f), range(15, 20).try_fold(7, Option, f));
+      assert_eq(
+        iter.try_fold<number, Option<number>>(7, Option, f),
+        range(15, 20).try_fold<number, Option<number>>(7, Option, f)
+      );
     }
   });
 
@@ -3178,20 +3215,20 @@ describe("Iterator", () => {
     assert_eq(
       range(0, 10)
         .map((x: number) => x + 3)
-        .try_fold(7, Option, f),
-      range(3, 13).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(3, 13).try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(0, 10)
         .map((x: number) => x + 3)
-        .try_rfold(7, Option, f),
-      range(3, 13).try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(3, 13).try_rfold<number, Option<number>>(7, Option, f)
     );
 
     let iter = range(0, 40).map((x: number) => x + 10);
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(20));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next_back(), Some(46));
   });
 
@@ -3201,20 +3238,20 @@ describe("Iterator", () => {
     assert_eq(
       range(-10, 20)
         .filter(p)
-        .try_fold(7, Option, f),
-      range(0, 10).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(0, 10).try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(-10, 20)
         .filter(p)
-        .try_rfold(7, Option, f),
-      range(0, 10).try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(0, 10).try_rfold<number, Option<number>>(7, Option, f)
     );
 
     let iter = range(0, 40).filter((x: number) => x % 2 === 1);
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(25));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next_back(), Some(31));
   });
 
@@ -3224,26 +3261,26 @@ describe("Iterator", () => {
     assert_eq(
       range(-9, 20)
         .filter_map(mp)
-        .try_fold(7, Option, f),
+        .try_fold<number, Option<number>>(7, Option, f),
       range(0, 10)
         .map((x: number) => 2 * x)
-        .try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(-9, 20)
         .filter_map(mp)
-        .try_rfold(7, Option, f),
+        .try_rfold<number, Option<number>>(7, Option, f),
       range(0, 10)
         .map((x: number) => 2 * x)
-        .try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f)
     );
 
     let iter = range(0, 40).filter_map((x: number) =>
       x % 2 === 1 ? None<number>() : Some(x * 2 + 10)
     );
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(38));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next_back(), Some(78));
   });
 
@@ -3252,32 +3289,32 @@ describe("Iterator", () => {
     assert_eq(
       range(9, 18)
         .enumerate()
-        .try_fold(7, Option, f),
+        .try_fold<number, Option<number>>(7, Option, f),
       range(0, 9)
-        .map((i: number) => [i, i + 9])
-        .try_fold(7, Option, f)
+        .map((i: number): [number, number] => [i, i + 9])
+        .try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(9, 18)
         .enumerate()
-        .try_rfold(7, Option, f),
+        .try_rfold<number, Option<number>>(7, Option, f),
       range(0, 9)
-        .map((i: number) => [i, i + 9])
-        .try_rfold(7, Option, f)
+        .map((i: number): [number, number] => [i, i + 9])
+        .try_rfold<number, Option<number>>(7, Option, f)
     );
 
     let iter = range(100, 200).enumerate();
-    let g = (acc: number, [i, x]: [number, number]) => {
+    let g = (acc: number, [i, x]: [number, number]): Option<number> => {
       let div = u8_checked_div(x, i + 1);
       if (div.is_none()) {
         return None();
       }
       return u8_checked_add(acc, div.unwrap());
     };
-    assert_eq(iter.try_fold(0, Option, g), None());
-    assert_eq(iter.next(), Some([7, 107]));
-    assert_eq(iter.try_rfold(0, Option, g), None());
-    assert_eq(iter.next_back(), Some([11, 111]));
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, g), None());
+    assert_eq(iter.next(), Some<[number, number]>([7, 107]));
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, g), None());
+    assert_eq(iter.next_back(), Some<[number, number]>([11, 111]));
   });
 
   test("peek_try_folds", () => {
@@ -3286,103 +3323,143 @@ describe("Iterator", () => {
     assert_eq(
       range(1, 20)
         .peekable()
-        .try_fold(7, Option, f),
-      range(1, 20).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(1, 20).try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(1, 20)
         .peekable()
-        .try_rfold(7, Option, f),
-      range(1, 20).try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(1, 20).try_rfold<number, Option<number>>(7, Option, f)
     );
 
-    let iter = range(1, 20).peekable();
-    assert_eq(iter.peek(), Some(1));
-    assert_eq(iter.try_fold(7, Option, f), range(1, 20).try_fold(7, Option, f));
+    {
+      let iter = range(1, 20).peekable();
+      assert_eq(iter.peek(), Some(1));
+      assert_eq(
+        iter.try_fold<number, Option<number>>(7, Option, f),
+        range(1, 20).try_fold<number, Option<number>>(7, Option, f)
+      );
 
-    iter = range(1, 20).peekable();
-    assert_eq(iter.peek(), Some(1));
-    assert_eq(iter.try_rfold(7, Option, f), range(1, 20).try_rfold(7, Option, f));
+      iter = range(1, 20).peekable();
+      assert_eq(iter.peek(), Some(1));
+      assert_eq(
+        iter.try_rfold<number, Option<number>>(7, Option, f),
+        range(1, 20).try_rfold<number, Option<number>>(7, Option, f)
+      );
+    }
 
-    iter = [100, 20, 30, 40, 50, 60, 70]
-      .iter()
-      .cloned()
-      .peekable();
-    assert_eq(iter.peek(), Some(100));
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
-    assert_eq(iter.peek(), Some(40));
+    {
+      let iter = [100, 20, 30, 40, 50, 60, 70]
+        .iter()
+        .cloned()
+        .peekable();
+      assert_eq(iter.peek(), Some(100));
+      assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
+      assert_eq(iter.peek(), Some(40));
 
-    iter = [100, 20, 30, 40, 50, 60, 70]
-      .iter()
-      .cloned()
-      .peekable();
-    assert_eq(iter.peek(), Some(100));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
-    assert_eq(iter.peek(), Some(100));
-    assert_eq(iter.next_back(), Some(50));
+      iter = [100, 20, 30, 40, 50, 60, 70]
+        .iter()
+        .cloned()
+        .peekable();
+      assert_eq(iter.peek(), Some(100));
+      assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
+      assert_eq(iter.peek(), Some(100));
+      assert_eq(iter.next_back(), Some(50));
+    }
 
-    iter = range(2, 5).peekable();
-    assert_eq(iter.peek(), Some(2));
-    assert_eq(iter.try_for_each(Result, Err), Err(2));
-    assert_eq(iter.peek(), Some(3));
-    assert_eq(iter.try_for_each(Result, Err), Err(3));
-    assert_eq(iter.peek(), Some(4));
-    assert_eq(iter.try_for_each(Result, Err), Err(4));
-    assert_eq(iter.peek(), None());
-    assert_eq(iter.try_for_each(Result, Err), Ok(undefined));
+    {
+      let iter = range(2, 5).peekable();
+      assert_eq(iter.peek(), Some(2));
+      assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Err(2));
+      assert_eq(iter.peek(), Some(3));
+      assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Err(3));
+      assert_eq(iter.peek(), Some(4));
+      assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Err(4));
+      assert_eq(iter.peek(), None());
+      assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Ok(undefined));
 
-    iter = range(2, 5).peekable();
-    assert_eq(iter.peek(), Some(2));
-    assert_eq(iter.try_rfold(undefined, Result, (_: undefined, x: number) => Err(x)), Err(4));
-    assert_eq(iter.peek(), Some(2));
-    assert_eq(iter.try_rfold(undefined, Result, (_: undefined, x: number) => Err(x)), Err(3));
-    assert_eq(iter.peek(), Some(2));
-    assert_eq(iter.try_rfold(undefined, Result, (_: undefined, x: number) => Err(x)), Err(2));
-    assert_eq(iter.peek(), None());
-    assert_eq(
-      iter.try_rfold(undefined, Result, (_: undefined, x: number) => Err(x)),
-      Ok(undefined)
-    );
+      iter = range(2, 5).peekable();
+      assert_eq(iter.peek(), Some(2));
+      assert_eq(
+        iter.try_rfold<undefined, Result<undefined, number>>(
+          undefined,
+          Result,
+          (_: undefined, x: number) => Err(x)
+        ),
+        Err(4)
+      );
+      assert_eq(iter.peek(), Some(2));
+      assert_eq(
+        iter.try_rfold<undefined, Result<undefined, number>>(
+          undefined,
+          Result,
+          (_: undefined, x: number) => Err(x)
+        ),
+        Err(3)
+      );
+      assert_eq(iter.peek(), Some(2));
+      assert_eq(
+        iter.try_rfold<undefined, Result<undefined, number>>(
+          undefined,
+          Result,
+          (_: undefined, x: number) => Err(x)
+        ),
+        Err(2)
+      );
+      assert_eq(iter.peek(), None());
+      assert_eq(
+        iter.try_rfold<undefined, Result<undefined, number>>(
+          undefined,
+          Result,
+          (_: undefined, x: number) => Err(x)
+        ),
+        Ok(undefined)
+      );
+    }
   });
 
-  test("skip_while_try_folds", () => {
+  test("skip_while_try_fold", () => {
     let f = (acc: number, x: number) => checked_add(2 * acc, x);
     let p = (x: number) => x % 10 <= 5;
     assert_eq(
       range(1, 20)
         .skip_while(p)
-        .try_fold(7, Option, f),
-      range(6, 20).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(6, 20).try_fold<number, Option<number>>(7, Option, f)
     );
     let iter = range(1, 20).skip_while(p);
     assert_eq(iter.nth(5), Some(11));
-    assert_eq(iter.try_fold(7, Option, f), range(12, 20).try_fold(7, Option, f));
+    assert_eq(
+      iter.try_fold<number, Option<number>>(7, Option, f),
+      range(12, 20).try_fold<number, Option<number>>(7, Option, f)
+    );
 
     iter = range(0, 50).skip_while((x: number) => x % 20 < 15);
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(23));
   });
 
-  test("take_while_try_folds", () => {
+  test("take_while_folds", () => {
     let f = (acc: number, x: number) => checked_add(2 * acc, x);
     let p = (x: number) => x !== 10;
     assert_eq(
       range(1, 20)
         .take_while(p)
-        .try_fold(7, Option, f),
-      range(1, 10).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(1, 10).try_fold<number, Option<number>>(7, Option, f)
     );
     let iter = range(1, 20).take_while(p);
     assert_eq(
-      iter.try_fold(0, Option, (x: number, y: number) => Some(x + y)),
+      iter.try_fold<number, Option<number>>(0, Option, (x: number, y: number) => Some(x + y)),
       Some(range(1, 10).sum())
     );
     assert_eq(iter.next(), None()); // flag should be set
     iter = range(1, 20).take_while(p);
-    assert_eq(iter.fold(0, (x: number, y: number) => x + y), range(1, 10).sum());
+    assert_eq(iter.fold<number>(0, (x: number, y: number) => x + y), range(1, 10).sum());
 
     iter = range(10, 50).take_while((x: number) => x !== 40);
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(20));
   });
 
@@ -3391,20 +3468,20 @@ describe("Iterator", () => {
     assert_eq(
       range(1, 20)
         .skip(9)
-        .try_fold(7, Option, f),
-      range(10, 20).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(10, 20).try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(1, 20)
         .skip(9)
-        .try_rfold(7, Option, f),
-      range(10, 20).try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(10, 20).try_rfold<number, Option<number>>(7, Option, f)
     );
 
     let iter = range(0, 30).skip(10);
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(20));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next_back(), Some(24));
   });
 
@@ -3446,35 +3523,35 @@ describe("Iterator", () => {
     assert_eq(
       range(10, 30)
         .take(10)
-        .try_fold(7, Option, f),
-      range(10, 20).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(10, 20).try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(10, 30)
         .take(10)
-        .try_rfold(7, Option, f),
-      range(10, 20).try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(10, 20).try_rfold<number, Option<number>>(7, Option, f)
     );
 
     let iter = range(10, 30).take(20);
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(20));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next_back(), Some(24));
 
     iter = range(2, 20).take(3);
-    assert_eq(iter.try_for_each(Result, Err), Err(2));
-    assert_eq(iter.try_for_each(Result, Err), Err(3));
-    assert_eq(iter.try_for_each(Result, Err), Err(4));
-    assert_eq(iter.try_for_each(Result, Err), Ok(undefined));
+    assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Err(2));
+    assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Err(3));
+    assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Err(4));
+    assert_eq(iter.try_for_each<Result<undefined, any>>(Result, Err), Ok(undefined));
 
     let iter2 = range(2, 20)
       .take(3)
       .rev();
-    assert_eq(iter2.try_for_each(Result, Err), Err(4));
-    assert_eq(iter2.try_for_each(Result, Err), Err(3));
-    assert_eq(iter2.try_for_each(Result, Err), Err(2));
-    assert_eq(iter2.try_for_each(Result, Err), Ok(undefined));
+    assert_eq(iter2.try_for_each<Result<undefined, any>>(Result, Err), Err(4));
+    assert_eq(iter2.try_for_each<Result<undefined, any>>(Result, Err), Err(3));
+    assert_eq(iter2.try_for_each<Result<undefined, any>>(Result, Err), Err(2));
+    assert_eq(iter2.try_for_each<Result<undefined, any>>(Result, Err), Ok(undefined));
   });
 
   test("flat_map_try_folds", () => {
@@ -3483,24 +3560,27 @@ describe("Iterator", () => {
     assert_eq(
       range(0, 10)
         .flat_map(mr)
-        .try_fold(7, Option, f),
-      range(0, 50).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(0, 50).try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(0, 10)
         .flat_map(mr)
-        .try_rfold(7, Option, f),
-      range(0, 50).try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(0, 50).try_rfold<number, Option<number>>(7, Option, f)
     );
     let iter = range(0, 10).flat_map(mr);
     iter.next();
     iter.next_back(); // have front and back iters progress
-    assert_eq(iter.try_rfold(7, Option, f), range(1, 49).try_rfold(7, Option, f));
+    assert_eq(
+      iter.try_rfold<number, Option<number>>(7, Option, f),
+      range(1, 49).try_rfold<number, Option<number>>(7, Option, f)
+    );
 
     iter = range(0, 10).flat_map((x: number) => range(4 * x, 4 * x + 4));
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(17));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next_back(), Some(35));
   });
 
@@ -3511,29 +3591,32 @@ describe("Iterator", () => {
       range(0, 10)
         .map(mr)
         .flatten()
-        .try_fold(7, Option, f),
-      range(0, 50).try_fold(7, Option, f)
+        .try_fold<number, Option<number>>(7, Option, f),
+      range(0, 50).try_fold<number, Option<number>>(7, Option, f)
     );
     assert_eq(
       range(0, 10)
         .map(mr)
         .flatten()
-        .try_rfold(7, Option, f),
-      range(0, 50).try_rfold(7, Option, f)
+        .try_rfold<number, Option<number>>(7, Option, f),
+      range(0, 50).try_rfold<number, Option<number>>(7, Option, f)
     );
     let iter = range(0, 10)
       .map(mr)
       .flatten();
     iter.next();
     iter.next_back(); // have front and back iters progress
-    assert_eq(iter.try_rfold(7, Option, f), range(1, 49).try_rfold(7, Option, f));
+    assert_eq(
+      iter.try_rfold<number, Option<number>>(7, Option, f),
+      range(1, 49).try_rfold<number, Option<number>>(7, Option, f)
+    );
 
     iter = range(0, 10)
       .map((x: number) => range(4 * x, 4 * x + 4))
       .flatten();
-    assert_eq(iter.try_fold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next(), Some(17));
-    assert_eq(iter.try_rfold(0, Option, i8_checked_add), None());
+    assert_eq(iter.try_rfold<number, Option<number>>(0, Option, i8_checked_add), None());
     assert_eq(iter.next_back(), Some(35));
   });
 

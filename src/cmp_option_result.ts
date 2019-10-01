@@ -233,6 +233,12 @@ export class Ordering extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self))
     return this.type as number;
   }
 
+  // Not part of Rust::std::cmp::Ordering
+  // This is an attempt to mimic Rust's `match` keyword
+  public match(): OrderingType {
+    return this.type;
+  }
+
   public static less(): Ordering {
     return new Ordering(OrderingType.Less);
   }
@@ -395,6 +401,9 @@ export function cmp(left: any, right: any): Ordering {
   }
 }
 
+/**
+ * Compares and returns the minimum of two values.
+ */
 export function min<T extends Ord>(v1: T, v2: T): T;
 export function min<T>(v1: T, v2: T): T;
 export function min(v1: any, v2: any): any {
@@ -404,13 +413,68 @@ export function min(v1: any, v2: any): any {
   return v1 <= v2 ? v1 : v2;
 }
 
+/**
+ * Compares the minumum of two values with respect to the specified comparison
+ * function.
+ *
+ * Returns the first argument if the comparison determines them to be equal.
+ */
+export function min_by<T>(v1: T, v2: T, compare: (v1: T, v2: T) => Ordering): T {
+  switch (compare(v1, v2).match()) {
+    case OrderingType.Less:
+    case OrderingType.Equal:
+      return v1;
+    case OrderingType.Greater:
+      return v2;
+  }
+}
+
+/**
+ * Returns the element that gives the minimum value from the specified function.
+ *
+ * Returns the first argument if the comparison determines them to be equal.
+ */
+export function min_by_key<T, K>(v1: T, v2: T, f: (x: T) => K): T {
+  return min_by(v1, v2, (v1: T, v2: T) => cmp(f(v1), f(v2)));
+}
+
+/**
+ * Compares and returns the maximum of two values.
+ *
+ * Returns the second argument if the comparison determines them to be equal.
+ */
 export function max<T extends Ord>(v1: T, v2: T): T;
 export function max<T>(v1: T, v2: T): T;
 export function max(v1: any, v2: any): any {
   if (isOrd(v1) && isOrd(v2)) {
     return v1.max(v2);
   }
-  return v1 >= v2 ? v1 : v2;
+  return v1 <= v2 ? v2 : v1;
+}
+
+/**
+ * Compares the maxumum of two values with respect to the specified comparison
+ * function.
+ *
+ * Returns the second argument if the comparison determaxes them to be equal.
+ */
+export function max_by<T>(v1: T, v2: T, compare: (v1: T, v2: T) => Ordering): T {
+  switch (compare(v1, v2).match()) {
+    case OrderingType.Less:
+    case OrderingType.Equal:
+      return v2;
+    case OrderingType.Greater:
+      return v1;
+  }
+}
+
+/**
+ * Returns the element that gives the maximum value from the specified function.
+ *
+ * Returns the second argument if the comparison determaxes them to be equal.
+ */
+export function max_by_key<T, K>(v1: T, v2: T, f: (x: T) => K): T {
+  return max_by(v1, v2, (v1: T, v2: T) => cmp(f(v1), f(v2)));
 }
 
 export function clamp<T extends Ord>(that: T, min: T, max: T): T;
@@ -507,7 +571,7 @@ export class Option<T> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartial
     return new Option(SomeVariant(payload));
   }
 
-  public static none<T = void>(): Option<T> {
+  public static none<T = undefined>(): Option<T> {
     return new Option(NoneVariant());
   }
 
@@ -825,7 +889,7 @@ export class Option<T> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartial
     return Some(v);
   }
 
-  public static from_error<T = void>(_: NoneError): Option<T> {
+  public static from_error<T = undefined>(_: NoneError): Option<T> {
     return None();
   }
 
@@ -845,7 +909,7 @@ export function Some<T>(payload: T): Option<T> {
   return Option.some<T>(payload);
 }
 
-export function None<T = void>(): Option<T> {
+export function None<T = undefined>(): Option<T> {
   return Option.none<T>();
 }
 
@@ -884,11 +948,11 @@ export class Result<T, E> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPart
     this.payload = payload;
   }
 
-  public static ok<T = any, E = void>(payload: T): Result<T, E> {
+  public static ok<T = any, E = undefined>(payload: T): Result<T, E> {
     return new Result(OkVariant(payload));
   }
 
-  public static err<T = void, E = any>(payload: E): Result<T, E> {
+  public static err<T = undefined, E = any>(payload: E): Result<T, E> {
     return new Result(ErrVariant(payload));
   }
 
@@ -1079,7 +1143,7 @@ export class Result<T, E> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPart
         if (opt instanceof Option) {
           return opt.map((b: B) => Ok(b));
         } else {
-          return Some(Ok(opt));
+          return Some(Ok<B, E>(opt));
         }
       }
       case ResultType.Err:
@@ -1123,19 +1187,19 @@ export class Result<T, E> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPart
     return this;
   }
 
-  public static from_okay<T = any, E = void>(v: T): Result<T, E> {
+  public static from_okay<T = any, E = undefined>(v: T): Result<T, E> {
     return Ok(v);
   }
 
-  public static from_error<T = void, E = any>(v: E): Result<T, E> {
+  public static from_error<T = undefined, E = any>(v: E): Result<T, E> {
     return Err(v);
   }
 }
 
-export function Ok<T = any, E = void>(payload: T): Result<T, E> {
+export function Ok<T = any, E = undefined>(payload: T): Result<T, E> {
   return Result.ok<T, E>(payload);
 }
 
-export function Err<T = void, E = any>(payload: E): Result<T, E> {
+export function Err<T = undefined, E = any>(payload: E): Result<T, E> {
   return Result.err<T, E>(payload);
 }

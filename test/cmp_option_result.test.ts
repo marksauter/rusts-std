@@ -25,8 +25,13 @@ import {
   le,
   ge,
   gt,
+  cmp,
   max,
+  max_by,
+  max_by_key,
   min,
+  min_by,
+  min_by_key,
   clamp
 } from "../src/cmp_option_result";
 import { Self } from "../src/std";
@@ -41,6 +46,15 @@ class Point extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))) {
     this.x = x;
     this.y = y;
   }
+
+  abs(): Point {
+    return new Point(Math.abs(this.x), Math.abs(this.y));
+  }
+
+  neg(): Point {
+    return new Point(-this.x, -this.y);
+  }
+
   eq(other: Point): boolean {
     return this.x === other.x && this.y === other.y;
   }
@@ -149,6 +163,67 @@ describe("Ord", () => {
     assert_eq(clamp(new Point(0, 0), p1, p2), p1);
     assert_eq(clamp(p2, p1, p3), p2);
     assert_eq(clamp(new Point(4, 4), p1, p2), p2);
+  });
+
+  test("ord_max_min", () => {
+    assert_eq(max(1, 2), 2);
+    assert_eq(max(2, 1), 2);
+    assert_eq(min(1, 2), 1);
+    assert_eq(min(2, 1), 1);
+    assert_eq(max(1, 1), 1);
+    assert_eq(min(1, 1), 1);
+
+    let p1 = new Point(1, 1);
+    let p2 = new Point(2, 2);
+
+    assert_eq(max(p1, p2), p2);
+    assert_eq(max(p2, p1), p2);
+    assert_eq(min(p1, p2), p1);
+    assert_eq(min(p2, p1), p1);
+    assert_eq(max(p1, p1), p1);
+    assert_eq(min(p1, p1), p1);
+  });
+
+  test("ord_min_max_by", () => {
+    let f = (x: number, y: number) => cmp(Math.abs(x), Math.abs(y));
+    assert_eq(min_by(1, -1, f), 1);
+    assert_eq(min_by(1, -2, f), 1);
+    assert_eq(min_by(2, -1, f), -1);
+    assert_eq(max_by(1, -1, f), -1);
+    assert_eq(max_by(1, -2, f), -2);
+    assert_eq(max_by(2, -1, f), 2);
+
+    let g = (x: Point, y: Point) => cmp(x.abs(), y.abs());
+    let p1 = new Point(1, 1);
+    let p2 = new Point(2, 2);
+
+    assert_eq(min_by(p1, p1.neg(), g), p1);
+    assert_eq(min_by(p1, p2.neg(), g), p1);
+    assert_eq(min_by(p2, p1.neg(), g), p1.neg());
+    assert_eq(max_by(p1, p1.neg(), g), p1.neg());
+    assert_eq(max_by(p1, p2.neg(), g), p2.neg());
+    assert_eq(max_by(p2, p1.neg(), g), p2);
+  });
+
+  test("ord_min_max_by_key", () => {
+    let f = (x: number) => Math.abs(x);
+    assert_eq(min_by_key(1, -1, f), 1);
+    assert_eq(min_by_key(1, -2, f), 1);
+    assert_eq(min_by_key(2, -1, f), -1);
+    assert_eq(max_by_key(1, -1, f), -1);
+    assert_eq(max_by_key(1, -2, f), -2);
+    assert_eq(max_by_key(2, -1, f), 2);
+
+    let g = (x: Point) => x.abs();
+    let p1 = new Point(1, 1);
+    let p2 = new Point(2, 2);
+
+    assert_eq(min_by_key(p1, p1.neg(), g), p1);
+    assert_eq(min_by_key(p1, p2.neg(), g), p1);
+    assert_eq(min_by_key(p2, p1.neg(), g), p1.neg());
+    assert_eq(max_by_key(p1, p1.neg(), g), p1.neg());
+    assert_eq(max_by_key(p1, p2.neg(), g), p2.neg());
+    assert_eq(max_by_key(p2, p1.neg(), g), p2);
   });
 
   test("Reverse", () => {

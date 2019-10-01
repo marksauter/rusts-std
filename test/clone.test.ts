@@ -23,7 +23,7 @@ test("Clone", () => {
   let o1 = { a: { b: 1 } };
   let o2 = clone(o1);
 
-  // This will compare by reference, so they should be not equal
+  // This will compare by reference, so they should NOT be equal
   assert(o1 !== o2);
   // This will compare by value, so they should be 'equal'
   assert_eq(o1, o2);
