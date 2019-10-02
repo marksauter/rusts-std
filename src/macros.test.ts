@@ -1,14 +1,37 @@
-import { PartialEq, isPartialEq } from "./internal";
+import { PartialEq, isPartialEq, format } from "./internal";
 
-export function assert(expr: boolean) {
-  expect(expr).toBe(true);
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      assert(fmt_str?: string, ...fmt_args: any[]): CustomMatcherResult;
+    }
+  }
+}
+
+expect.extend({
+  assert(expr: boolean, fmt_str?: string, ...fmt_args: any[]) {
+    return {
+      pass: expr,
+      message: () => format(fmt_str || "assertion failed", ...fmt_args)
+    };
+  }
+});
+
+export function assert(expr: boolean, fmt_str?: string, ...fmt_args: any[]) {
+  expect(expr).assert(fmt_str, ...fmt_args);
 }
 
 export function assert_eq<T extends PartialEq>(left: T, right: T): void;
 export function assert_eq<T>(left: T, right: T): void;
 export function assert_eq(left: any, right: any) {
   if (isPartialEq(left) && isPartialEq(right)) {
-    expect(left.eq(right)).toBe(true);
+    expect(left.eq(right)).assert(
+      `assertion failed: \`(left == right)\`
+ left: \`{:?}\`,
+right: \`{:?}\``,
+      left,
+      right
+    );
   } else {
     expect(left).toEqual(right);
   }
@@ -18,7 +41,13 @@ export function assert_ne<T extends PartialEq>(left: T, right: T): void;
 export function assert_ne<T>(left: T, right: T): void;
 export function assert_ne(left: any, right: any) {
   if (isPartialEq(left) && isPartialEq(right)) {
-    expect(left.ne(right)).toBe(true);
+    expect(left.ne(right)).assert(
+      `assertion failed: \`(left != right)\`
+ left: \`{:?}\`,
+right: \`{:?}\``,
+      left,
+      right
+    );
   } else {
     expect(left).not.toEqual(right);
   }

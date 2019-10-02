@@ -38,10 +38,10 @@ export enum ChainState {
 /**
  * An iterator that strings two iterators together.
  */
-export class Chain<T, A extends IteratorCommon<T>, B extends IteratorCommon<A["Item"]>>
+export class Chain<A extends IteratorCommon, B extends IteratorCommon<A["Item"]>>
   extends IteratorBase<A["Item"]>
   implements Clone, Debug {
-  public Self!: Chain<T, A, B>;
+  public Self!: Chain<A, B>;
 
   public a: A;
   public b: B;
@@ -239,11 +239,10 @@ export class Chain<T, A extends IteratorCommon<T>, B extends IteratorCommon<A["I
 }
 
 export class ChainDoubleEndedIterator<
-  T,
-  A extends DoubleEndedIteratorCommon<T>,
+  A extends DoubleEndedIteratorCommon,
   B extends DoubleEndedIteratorCommon<A["Item"]>
 > extends DoubleEndedIterator<A["Item"]> implements Clone, Debug {
-  public Self!: ChainDoubleEndedIterator<T, A, B>;
+  public Self!: ChainDoubleEndedIterator<A, B>;
 
   public a: A;
   public b: B;
@@ -546,14 +545,14 @@ declare module "./iter" {
     /**
      * Takes two iterators and creates a new iterator over both in sequence.
      */
-    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<T, this, U["IntoIter"]>;
+    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<this, U["IntoIter"]>;
   }
 
   interface ExactSizeIterator<T> {
     /**
      * Takes two iterators and creates a new iterator over both in sequence.
      */
-    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<T, this, U["IntoIter"]>;
+    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<this, U["IntoIter"]>;
   }
 
   interface DoubleEndedIterator<T> {
@@ -562,8 +561,8 @@ declare module "./iter" {
      */
     chain<U extends IntoIterator<T, DoubleEndedIteratorCommon<T>>>(
       other: U
-    ): ChainDoubleEndedIterator<T, this, U["IntoIter"]>;
-    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<T, this, U["IntoIter"]>;
+    ): ChainDoubleEndedIterator<this, U["IntoIter"]>;
+    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<this, U["IntoIter"]>;
   }
 
   interface ExactSizeAndDoubleEndedIterator<T> {
@@ -572,8 +571,8 @@ declare module "./iter" {
      */
     chain<U extends IntoIterator<T, DoubleEndedIteratorCommon<T>>>(
       other: U
-    ): ChainDoubleEndedIterator<T, this, U["IntoIter"]>;
-    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<T, this, U["IntoIter"]>;
+    ): ChainDoubleEndedIterator<this, U["IntoIter"]>;
+    chain<U extends IntoIterator<T, IteratorCommon<T>>>(other: U): Chain<this, U["IntoIter"]>;
   }
 }
 
@@ -581,11 +580,11 @@ function chain<
   T,
   U extends IntoIterator<T, DoubleEndedIteratorCommon<T>>,
   Self extends DoubleEndedIteratorCommon<T>
->(this: Self, other: U): ChainDoubleEndedIterator<T, Self, U["IntoIter"]>;
+>(this: Self, other: U): ChainDoubleEndedIterator<Self, U["IntoIter"]>;
 function chain<T, U extends IntoIterator<T, IteratorCommon<T>>, Self extends IteratorCommon<T>>(
   this: Self,
   other: U
-): Chain<T, Self, U["IntoIter"]>;
+): Chain<Self, U["IntoIter"]>;
 function chain(this: any, other: any): any {
   let iter = other.into_iter();
   if (iter instanceof DoubleEndedIteratorCommon) {

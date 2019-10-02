@@ -65,15 +65,15 @@ describe("Slice", () => {
     let a = [1, 2, 3, 4, 5]; // len>4 so the unroll is used.
     assert_eq(a.iter().fold(0, (acc: number, x: number) => 2 * acc + x), 57);
     assert_eq(a.iter().rfold(0, (acc: number, x: number) => 2 * acc + x), 129);
-    let fold = (acc: number, x: number) => {
+    let fold = (acc: number, x: number): Option<number> => {
       let mul = checked_mul(acc, 2);
       if (mul.is_none()) {
         return None();
       }
       return checked_add(mul.unwrap(), x);
     };
-    assert_eq(a.iter().try_fold(0, Option, fold), Some(57));
-    assert_eq(a.iter().try_rfold(0, Option, fold), Some(129));
+    assert_eq(a.iter().try_fold<number, Option<number>>(0, Option, fold), Some(57));
+    assert_eq(a.iter().try_rfold<number, Option<number>>(0, Option, fold), Some(129));
 
     // short-circuiting try_fold, through other methods
     a = [0, 1, 2, 3, 5, 5, 5, 7, 8, 9];
