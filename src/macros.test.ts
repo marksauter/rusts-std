@@ -61,6 +61,13 @@ export function should_panic(f: Function, error?: Error) {
   }
 }
 
+export const test_macros = {
+  assert,
+  assert_eq,
+  assert_ne,
+  should_panic
+};
+
 test("assert", () => {
   assert(true);
 });

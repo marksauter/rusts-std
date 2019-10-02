@@ -1,9 +1,4 @@
-import * as macros_test from "./macros.test";
-
-export const test = {
-  ...macros_test
-};
-
+export { test_macros } from "./macros.test";
 export * from "./consts";
 export * from "./intrinsics";
 export * from "./macros";
