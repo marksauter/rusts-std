@@ -1,6 +1,23 @@
 import { PartialEq, isPartialEq, format } from "./internal";
 const nodeAssert = require("assert");
 
+export function println(fmt_str: string, ...fmt_args: any[]) {
+  console.log(format(fmt_str, ...fmt_args));
+}
+
+export function eprintln(fmt_str: string, ...fmt_args: any[]) {
+  console.error(format(fmt_str, ...fmt_args));
+}
+
+export function dbg(val: any) {
+  eprintln("{:?}", val);
+}
+
+export function panic(fmt_str?: string, ...fmt_args: any[]) {
+  let msg = fmt_str ? format(fmt_str, ...fmt_args) : "explicit panic";
+  throw new Error(msg);
+}
+
 export function assert(expr: any, fmt_str?: string, ...fmt_args: any[]) {
   let message = fmt_str ? format(fmt_str, ...fmt_args) : "assertion failed";
   if (message) {
@@ -58,6 +75,32 @@ export function debug_assert_ne(left: any, right: any) {
   }
 }
 
+/**
+ * Indicates unreachable code.
+ */
+export function unreachable(fmt_str?: string, ...fmt_args: any[]) {
+  let msg = "internal error: entered unreachable code";
+  if (fmt_str) {
+    msg += `: ${format(fmt_str, ...fmt_args)}`;
+  }
+  throw new Error(msg);
+}
+
+/**
+ * Indicates unfinished code.
+ */
+export function unimplemented(fmt_str?: string, ...fmt_args: any[]) {
+  let msg = "not yet implemented";
+  if (fmt_str) {
+    msg += `: ${format(fmt_str, ...fmt_args)}`;
+  }
+  throw new Error(msg);
+}
+/**
+ * Alias for `unimplemented`
+ */
+export const todo = unimplemented;
+
 export function abstract_panic(class_name: string, method_name: string) {
-  throw new Error(`abstract ${class_name}.${method_name} called, this method must be defined`);
+  unimplemented("abstract {:?}.{:?}: this method must be defined", class_name, method_name);
 }

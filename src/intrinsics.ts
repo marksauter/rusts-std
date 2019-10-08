@@ -25,6 +25,26 @@ export function clamp_u64(n: number): number {
   }
 }
 
+export function minnum(x: number, y: number): number {
+  if (isNaN(x)) {
+    return y;
+  } else if (isNaN(y)) {
+    return x;
+  } else {
+    return x <= y ? x : y;
+  }
+}
+
+export function maxnum(x: number, y: number): number {
+  if (isNaN(x)) {
+    return y;
+  } else if (isNaN(y)) {
+    return x;
+  } else {
+    return x <= y ? y : x;
+  }
+}
+
 export function u64_saturating_add(left: number, right: number): number {
   return clamp_u64(integer(left) + integer(right));
 }

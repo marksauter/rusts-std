@@ -12,6 +12,9 @@ import {
   format,
   // ops/try.ts
   ImplTry,
+  // intrinsics.ts
+  maxnum,
+  minnum,
   // macros.ts
   assert,
   abstract_panic
@@ -410,7 +413,7 @@ export function min(v1: any, v2: any): any {
   if (isOrd(v1) && isOrd(v2)) {
     return v1.min(v2);
   }
-  return v1 <= v2 ? v1 : v2;
+  return minnum(v1, v2);
 }
 
 /**
@@ -449,7 +452,7 @@ export function max(v1: any, v2: any): any {
   if (isOrd(v1) && isOrd(v2)) {
     return v1.max(v2);
   }
-  return v1 <= v2 ? v2 : v1;
+  return maxnum(v1, v2);
 }
 
 /**
