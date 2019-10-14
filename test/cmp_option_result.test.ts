@@ -34,7 +34,7 @@ import {
   min_by_key,
   clamp
 } from "../src/cmp_option_result";
-import { Self } from "../src/std";
+import { Self, abs, format } from "../src/std";
 
 class Point extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))) {
   public Self!: Point;
@@ -48,7 +48,7 @@ class Point extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))) {
   }
 
   abs(): Point {
-    return new Point(Math.abs(this.x), Math.abs(this.y));
+    return new Point(abs(this.x), abs(this.y));
   }
 
   neg(): Point {
@@ -72,17 +72,21 @@ class Point extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))) {
   partial_cmp(other: Point): Option<Ordering> {
     return Some(this.cmp(other));
   }
+
+  fmt_debug(): string {
+    return format("Point({:?},{:?})", this.x, this.y);
+  }
 }
 
 describe("Eq", () => {
   test("eq_and_ne", () => {
     assert(eq(null, null));
-    assert(eq(NaN, NaN));
     assert(eq(1, 1));
     assert(eq([1, 2], [1, 2]));
     assert(eq({ a: 1 }, { a: 1 }));
     assert(eq(new Point(1, 1), new Point(1, 1)));
 
+    assert(ne(NaN, NaN));
     assert(ne(1, 2));
     assert(ne([1, 2], [2, 1]));
     assert(ne({ a: 1 }, { a: 2 }));
@@ -185,7 +189,7 @@ describe("Ord", () => {
   });
 
   test("ord_min_max_by", () => {
-    let f = (x: number, y: number) => cmp(Math.abs(x), Math.abs(y));
+    let f = (x: number, y: number) => cmp(abs(x), abs(y));
     assert_eq(min_by(1, -1, f), 1);
     assert_eq(min_by(1, -2, f), 1);
     assert_eq(min_by(2, -1, f), -1);
@@ -206,7 +210,7 @@ describe("Ord", () => {
   });
 
   test("ord_min_max_by_key", () => {
-    let f = (x: number) => Math.abs(x);
+    let f = (x: number) => abs(x);
     assert_eq(min_by_key(1, -1, f), 1);
     assert_eq(min_by_key(1, -2, f), 1);
     assert_eq(min_by_key(2, -1, f), -1);
@@ -271,13 +275,19 @@ describe("Option", () => {
       x.replace(5);
       assert_eq(x, y);
     }
-
     {
       let x = Some(Less);
       let y = Some(Greater);
       assert_ne(x, y);
       x.replace(Greater);
       assert_eq(x, y);
+    }
+    {
+      let pts1: [Point, Point] = [new Point(1, 1), new Point(2, 2)];
+      let pts2: [Point, Point] = [new Point(2, 2), new Point(2, 2)];
+      assert_ne(pts1, pts2);
+      pts2[0] = new Point(1, 1);
+      assert_eq(pts1, pts2);
     }
   });
 

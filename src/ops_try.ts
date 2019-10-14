@@ -1,4 +1,5 @@
 import {
+  isNil,
   // mixin.ts
   AnyConstructor,
   Mixin,
@@ -25,7 +26,7 @@ export interface TryFace<O = any, E = any> {
 
 export const ImplTry = <T extends AnyConstructor<Self>>(Base: T) =>
   class Try extends Base {
-    readonly isTry = true;
+    public isTry = true;
 
     public Okay!: any;
     public Error!: any;
@@ -69,5 +70,5 @@ export interface TryConstructor<R> {
 }
 
 export function isTry(t: any): t is Try {
-  return typeof t === "object" && t !== null && (t as Try).isTry;
+  return !isNil(t) && (t as Try).isTry === true;
 }

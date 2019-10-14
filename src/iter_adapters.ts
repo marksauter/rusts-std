@@ -47,6 +47,7 @@ import {
   u64_saturating_add,
   u64_saturating_sub,
   u64_saturating_mul,
+  minnum,
   // checked.ts
   u64_checked_add,
   u64_checked_mul,
@@ -121,8 +122,6 @@ export class Rev<I extends DoubleEndedIterator> extends DoubleEndedIterator
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Rev(clone(this.iter));
   }
@@ -211,8 +210,6 @@ class RevExactSizeIterator<I extends ExactSizeAndDoubleEndedIterator>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new RevExactSizeIterator(clone(this.iter));
   }
@@ -264,8 +261,6 @@ export class Cloned<I extends IteratorBase> extends IteratorBase implements Clon
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Cloned(clone(this.iter));
   }
@@ -320,8 +315,6 @@ export class ClonedExactSizeIterator<I extends ExactSizeIterator> extends ExactS
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ClonedExactSizeIterator(clone(this.iter));
   }
@@ -384,8 +377,6 @@ export class ClonedDoubleEndedIterator<I extends DoubleEndedIterator> extends Do
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ClonedDoubleEndedIterator(clone(this.iter));
   }
@@ -458,8 +449,6 @@ export class ClonedExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleE
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ClonedExactSizeAndDoubleEndedIterator(clone(this.iter));
   }
@@ -557,8 +546,6 @@ export class Cycle<I extends IteratorCommon & Clone> extends IteratorBase implem
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Cycle(this.orig.clone());
   }
@@ -678,8 +665,6 @@ export class StepBy<I extends IteratorCommon> extends IteratorBase implements Cl
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     // Need to add one to `this.step` because constructor sets `this.step` to
     // `step - 1`
@@ -818,8 +803,6 @@ export class StepByExactSizeIterator<I extends ExactSizeIterator> extends ExactS
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     // Need to add one to `this.step` because constructor sets `this.step` to
     // `step - 1`
@@ -995,8 +978,6 @@ export class StepByExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleE
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     // Need to add one to `this.step` because constructor sets `this.step` to
     // `step - 1`
@@ -1059,8 +1040,6 @@ export class Map<I extends IteratorCommon, B> extends IteratorBase<B> implements
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Map(clone(this.iter), this.f);
   }
@@ -1116,8 +1095,6 @@ export class MapExactSizeIterator<I extends ExactSizeIterator, B> extends ExactS
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new MapExactSizeIterator(clone(this.iter), this.f);
   }
@@ -1182,8 +1159,6 @@ export class MapDoubleEndedIterator<I extends DoubleEndedIteratorCommon, B>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new MapDoubleEndedIterator(clone(this.iter), this.f);
   }
@@ -1248,8 +1223,6 @@ export class MapExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnde
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new MapExactSizeAndDoubleEndedIterator(clone(this.iter), this.f);
   }
@@ -1322,8 +1295,6 @@ export class Filter<I extends IteratorCommon> extends IteratorBase implements Cl
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Filter(clone(this.iter), this.predicate);
   }
@@ -1406,8 +1377,6 @@ export class FilterDoubleEndedIterator<I extends DoubleEndedIteratorCommon>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FilterDoubleEndedIterator(clone(this.iter), this.predicate);
   }
@@ -1491,8 +1460,6 @@ export class FilterMap<I extends IteratorCommon, B> extends IteratorBase<B>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FilterMap(clone(this.iter), this.f);
   }
@@ -1578,8 +1545,6 @@ export class FilterMapDoubleEndedIterator<I extends DoubleEndedIteratorCommon, B
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FilterMapDoubleEndedIterator(clone(this.iter), this.f);
   }
@@ -1654,8 +1619,6 @@ export class Enumerate<I extends IteratorCommon> extends IteratorBase implements
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Enumerate(clone(this.iter));
   }
@@ -1740,8 +1703,6 @@ export class EnumerateExactSizeIterator<I extends ExactSizeIterator> extends Exa
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new EnumerateExactSizeIterator(clone(this.iter));
   }
@@ -1866,8 +1827,6 @@ export class EnumerateExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoub
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new EnumerateExactSizeAndDoubleEndedIterator(clone(this.iter));
   }
@@ -2028,8 +1987,6 @@ export class Peekable<I extends IteratorBase> extends IteratorBase implements Cl
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Peekable(clone(this.iter));
   }
@@ -2191,8 +2148,6 @@ export class PeekableExactSizeIterator<I extends ExactSizeIterator> extends Exac
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new PeekableExactSizeIterator(clone(this.iter));
   }
@@ -2409,8 +2364,6 @@ export class PeekableDoubleEndedIterator<I extends DoubleEndedIterator> extends 
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new PeekableDoubleEndedIterator(clone(this.iter));
   }
@@ -2628,8 +2581,6 @@ export class PeekableExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubl
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new PeekableExactSizeAndDoubleEndedIterator(clone(this.iter));
   }
@@ -2719,8 +2670,6 @@ export class SkipWhile<I extends IteratorCommon> extends IteratorBase implements
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new SkipWhile(clone(this.iter), this.predicate);
   }
@@ -2797,8 +2746,6 @@ export class TakeWhile<I extends IteratorCommon> extends IteratorBase implements
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new TakeWhile(clone(this.iter), this.predicate);
   }
@@ -2915,8 +2862,6 @@ export class Skip<I extends IteratorCommon> extends IteratorBase implements Clon
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Skip(clone(this.iter), this.n);
   }
@@ -3031,8 +2976,6 @@ export class SkipExactSizeIterator<I extends ExactSizeIterator> extends ExactSiz
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new SkipExactSizeIterator(clone(this.iter), this.n);
   }
@@ -3193,8 +3136,6 @@ export class SkipExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new SkipExactSizeAndDoubleEndedIterator(clone(this.iter), this.n);
   }
@@ -3250,7 +3191,7 @@ export class Take<I extends IteratorCommon> extends IteratorBase implements Clon
 
     let [lower, upper] = this.iter.size_hint();
 
-    lower = Math.min(lower, this.n);
+    lower = minnum(lower, this.n);
 
     let match_upper = upper.match();
     switch (match_upper.type) {
@@ -3291,8 +3232,6 @@ export class Take<I extends IteratorCommon> extends IteratorBase implements Clon
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Take(clone(this.iter), this.n);
   }
@@ -3348,7 +3287,7 @@ export class TakeExactSizeIterator<I extends ExactSizeIterator> extends ExactSiz
 
     let [lower, upper] = this.iter.size_hint();
 
-    lower = Math.min(lower, this.n);
+    lower = minnum(lower, this.n);
 
     let match_upper = upper.match();
     switch (match_upper.type) {
@@ -3389,8 +3328,6 @@ export class TakeExactSizeIterator<I extends ExactSizeIterator> extends ExactSiz
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new TakeExactSizeIterator(clone(this.iter), this.n);
   }
@@ -3447,7 +3384,7 @@ export class TakeExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
 
     let [lower, upper] = this.iter.size_hint();
 
-    lower = Math.min(lower, this.n);
+    lower = minnum(lower, this.n);
 
     let match_upper = upper.match();
     switch (match_upper.type) {
@@ -3530,8 +3467,6 @@ export class TakeExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new TakeExactSizeAndDoubleEndedIterator(clone(this.iter), this.n);
   }
@@ -3591,8 +3526,6 @@ export class Scan<I extends IteratorCommon, St, B> extends IteratorBase<B> imple
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Scan(clone(this.iter), clone(this.state), this.f);
   }
@@ -3958,8 +3891,6 @@ export class Inspect<I extends IteratorBase> extends IteratorBase implements Clo
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Inspect(clone(this.iter), this.f);
   }
@@ -4025,8 +3956,6 @@ export class InspectExactSizeIterator<I extends ExactSizeIterator> extends Exact
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new InspectExactSizeIterator(clone(this.iter), this.f);
   }
@@ -4101,8 +4030,6 @@ export class InspectDoubleEndedIterator<I extends DoubleEndedIterator> extends D
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new InspectDoubleEndedIterator(clone(this.iter), this.f);
   }
@@ -4187,8 +4114,6 @@ export class InspectExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDouble
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new InspectExactSizeAndDoubleEndedIterator(clone(this.iter), this.f);
   }

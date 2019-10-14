@@ -1,4 +1,7 @@
 import {
+  isNil,
+  isObjectLike,
+  is_nan,
   // mixin.ts
   AnyConstructor,
   Mixin,
@@ -27,7 +30,7 @@ const is_equal = require("lodash.isequal");
  */
 export const ImplPartialEq = <T extends AnyConstructor<Self>>(Base: T) =>
   class PartialEq extends Base {
-    readonly isPartialEq = true;
+    public isPartialEq = true;
 
     public Rhs!: this["Self"];
 
@@ -51,12 +54,12 @@ export const ImplPartialEq = <T extends AnyConstructor<Self>>(Base: T) =>
 export type PartialEq = Mixin<typeof ImplPartialEq>;
 
 export function isPartialEq(t: any): t is PartialEq {
-  return typeof t === "object" && t !== null && (t as PartialEq).isPartialEq;
+  return !isNil(t) && (t as PartialEq).isPartialEq === true;
 }
 
 export const ImplEq = <T extends AnyConstructor<PartialEq>>(Base: T) =>
   class Eq extends Base {
-    readonly isEq = true;
+    public isEq = true;
 
     public Rhs!: this["Self"];
   };
@@ -64,7 +67,7 @@ export const ImplEq = <T extends AnyConstructor<PartialEq>>(Base: T) =>
 export type Eq = Mixin<typeof ImplEq>;
 
 export function isEq(t: any): t is Eq {
-  return typeof t === "object" && t !== null && (t as Eq).isEq;
+  return !isNil(t) && (t as Eq).isEq === true;
 }
 
 /**
@@ -72,7 +75,7 @@ export function isEq(t: any): t is Eq {
  */
 export const ImplPartialOrd = <T extends AnyConstructor<PartialEq>>(Base: T) =>
   class PartialOrd extends Base {
-    readonly isPartialOrd = true;
+    public isPartialOrd = true;
 
     public Rhs!: this["Self"];
 
@@ -150,7 +153,7 @@ export const ImplPartialOrd = <T extends AnyConstructor<PartialEq>>(Base: T) =>
 export type PartialOrd = Mixin<typeof ImplPartialOrd>;
 
 export function isPartialOrd(t: any): t is PartialOrd {
-  return typeof t === "object" && t !== null && (t as PartialOrd).isPartialOrd;
+  return !isNil(t) && (t as PartialOrd).isPartialOrd === true;
 }
 
 /**
@@ -158,7 +161,7 @@ export function isPartialOrd(t: any): t is PartialOrd {
  */
 export const ImplOrd = <T extends AnyConstructor<Eq & PartialOrd>>(Base: T) =>
   class Ord extends Base {
-    readonly isOrd = true;
+    public isOrd = true;
 
     /**
      * This method returns an `Ordering` between `self` and `other`.
@@ -201,7 +204,7 @@ export const ImplOrd = <T extends AnyConstructor<Eq & PartialOrd>>(Base: T) =>
 export type Ord = Mixin<typeof ImplOrd>;
 
 export function isOrd(t: any): t is Ord {
-  return typeof t === "object" && t !== null && (t as Ord).isOrd;
+  return !isNil(t) && (t as Ord).isOrd === true;
 }
 
 /**
@@ -222,7 +225,8 @@ enum OrderingType {
   Greater = 1
 }
 
-export class Ordering extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))) {
+export class Ordering extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self))))
+  implements Debug {
   public Self!: Ordering;
 
   private type: OrderingType;
@@ -310,26 +314,297 @@ export class Ordering extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self))
   public partial_cmp(other: Ordering): Option<Ordering> {
     return partial_cmp(this.type, other.type);
   }
+
+  // Debug
+  public fmt_debug(): string {
+    switch (this.type) {
+      case OrderingType.Less:
+        return "Less";
+      case OrderingType.Equal:
+        return "Equal";
+      case OrderingType.Greater:
+        return "Greater";
+    }
+  }
 }
 
 export const Less = Ordering.less();
 export const Equal = Ordering.equal();
 export const Greater = Ordering.greater();
 
+declare global {
+  interface Array<T> {
+    get(index: number): Option<T>;
+    isPartialEq: true;
+    eq(other: T[]): boolean;
+    ne(other: T[]): boolean;
+
+    isPartialOrd: true;
+    partial_cmp(other: T[]): Option<Ordering>;
+    lt(other: T[]): boolean;
+    le(other: T[]): boolean;
+    gt(other: T[]): boolean;
+    ge(other: T[]): boolean;
+
+    isOrd: true;
+    cmp(other: T[]): Ordering;
+    max(other: T[]): T[];
+    min(other: T[]): T[];
+    clamp(min: T[], max: T[]): T[];
+  }
+  interface Number {
+    isPartialEq: true;
+    eq(other: number): boolean;
+    ne(other: number): boolean;
+
+    isPartialOrd: true;
+    partial_cmp(other: number): Option<Ordering>;
+    lt(other: number): boolean;
+    le(other: number): boolean;
+    gt(other: number): boolean;
+    ge(other: number): boolean;
+
+    isOrd: true;
+    cmp(other: number): Ordering;
+    max(other: number): number;
+    min(other: number): number;
+    clamp(min: number, max: number): number;
+  }
+}
+
+Array.prototype.get = function(index) {
+  if (index in this) {
+    return Some(this[index]);
+  }
+  return None();
+};
+Array.prototype.isPartialEq = true;
+Array.prototype.eq = function(other) {
+  if (this.length !== other.length) {
+    return false;
+  }
+
+  return this.iter()
+    .zip(other.iter())
+    .all(([x, y]) => eq(x, y));
+};
+Array.prototype.ne = function(other) {
+  return !this.eq(other);
+};
+Array.prototype.isPartialOrd = true;
+Array.prototype.partial_cmp = function(other) {
+  let l = min(this.length, other.length);
+
+  for (let i = 0; i < l; ++i) {
+    let ord = partial_cmp(this[i], other[i]);
+    if (!ord.eq(Some(Equal))) {
+      return ord;
+    }
+  }
+
+  return partial_cmp(this.length, other.length);
+};
+Array.prototype.lt = function(other) {
+  let match = this.partial_cmp(other).match();
+  switch (match.type) {
+    case OptionType.Some:
+      if (match.value.eq(Less)) {
+        return true;
+      }
+    default:
+      return false;
+  }
+};
+Array.prototype.le = function(other) {
+  let match = this.partial_cmp(other).match();
+  switch (match.type) {
+    case OptionType.Some:
+      if (match.value.eq(Less) || match.value.eq(Equal)) {
+        return true;
+      }
+    default:
+      return false;
+  }
+};
+Array.prototype.gt = function(other) {
+  let match = this.partial_cmp(other).match();
+  switch (match.type) {
+    case OptionType.Some:
+      if (match.value.eq(Greater)) {
+        return true;
+      }
+    default:
+      return false;
+  }
+};
+Array.prototype.ge = function(other) {
+  let match = this.partial_cmp(other).match();
+  switch (match.type) {
+    case OptionType.Some:
+      if (match.value.eq(Greater) || match.value.eq(Equal)) {
+        return true;
+      }
+    default:
+      return false;
+  }
+};
+Array.prototype.isOrd = true;
+Array.prototype.cmp = function(other) {
+  let l = min(this.length, other.length);
+
+  for (let i = 0; i < l; ++i) {
+    let ord = cmp(this[i], other[i]);
+    if (!ord.eq(Equal)) {
+      return ord;
+    }
+  }
+
+  return cmp(this.length, other.length);
+};
+Array.prototype.max = function(other) {
+  return other.ge(this) ? other : this;
+};
+Array.prototype.min = function(other) {
+  return this.le(other) ? this : other;
+};
+Array.prototype.clamp = function(min, max) {
+  assert(min.le(max));
+  if (this.lt(min)) {
+    return min;
+  } else if (this.gt(max)) {
+    return max;
+  } else {
+    return this;
+  }
+};
+
+Number.prototype.isPartialEq = true;
+Number.prototype.eq = function(other) {
+  return this.valueOf() === other;
+};
+Number.prototype.ne = function(other) {
+  return !this.eq(other);
+};
+Number.prototype.isPartialOrd = true;
+Number.prototype.partial_cmp = function(other) {
+  let n = this.valueOf();
+  let le = n <= other;
+  let ge = n >= other;
+  if (!le && !ge) {
+    return None();
+  } else if (!le && ge) {
+    return Some(Greater);
+  } else if (le && !ge) {
+    return Some(Less);
+  } else {
+    return Some(Equal);
+  }
+};
+Number.prototype.lt = function(other) {
+  return this.valueOf() < other;
+};
+Number.prototype.le = function(other) {
+  return this.valueOf() <= other;
+};
+Number.prototype.gt = function(other) {
+  return this.valueOf() > other;
+};
+Number.prototype.ge = function(other) {
+  return this.valueOf() >= other;
+};
+Number.prototype.isOrd = true;
+Number.prototype.cmp = function(other) {
+  let n = this.valueOf();
+  if (n < other) {
+    return Less;
+  } else if (n === other) {
+    return Equal;
+  } else {
+    return Greater;
+  }
+};
+Number.prototype.max = function(other) {
+  return maxnum(this.valueOf(), other);
+};
+Number.prototype.min = function(other) {
+  return minnum(this.valueOf(), other);
+};
+Number.prototype.clamp = function(min, max) {
+  assert(min <= max);
+  let n = this.valueOf();
+  if (n < min) {
+    return min;
+  } else if (n > max) {
+    return max;
+  } else {
+    return n;
+  }
+};
+
+// Get `Option`al value at `obj[key]`.
+function get(obj: { [index: string]: any }, key: string): Option<any> {
+  if (key in obj) {
+    return Some(obj[key]);
+  }
+  return None();
+}
+
 export function eq<T extends PartialEq>(left: T, right: T): boolean;
-export function eq(left: any, right: any): boolean;
+export function eq<T>(left: T, right: T): boolean;
 export function eq(left: any, right: any): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (left == null || right == null || (!isObjectLike(left) && !isObjectLike(right))) {
+    if (is_nan(left) || is_nan(right)) {
+      return false;
+    }
+    return left !== left && right !== right;
+  }
   if (isPartialEq(left) && isPartialEq(right)) {
     return left.eq(right);
+  }
+  if (isObjectLike(left) && isObjectLike(right)) {
+    let entries = Object.entries(left);
+    let other_len = Object.keys(right).length;
+    if (entries.length !== other_len) {
+      return false;
+    }
+    return entries
+      .iter()
+      .all(([key, value]: [string, any]) =>
+        get(right, key).map_or(false, (v: any) => eq(value, v))
+      );
   }
   return is_equal(left, right);
 }
 
 export function ne<T extends PartialEq>(left: T, right: T): boolean;
-export function ne(left: any, right: any): boolean;
+export function ne<T>(left: T, right: T): boolean;
 export function ne(left: any, right: any): boolean {
+  if (left === right) {
+    return false;
+  }
+  if (left == null || right == null || (!isObjectLike(left) && !isObjectLike(right))) {
+    if (is_nan(left) || is_nan(right)) {
+      return true;
+    }
+    return !(left !== left && right !== right);
+  }
   if (isPartialEq(left) && isPartialEq(right)) {
     return left.ne(right);
+  }
+  if (isObjectLike(left) && isObjectLike(right)) {
+    let entries = Object.entries(left);
+    let other_len = Object.keys(right).length;
+    if (entries.length !== other_len) {
+      return true;
+    }
+    return entries
+      .iter()
+      .any(([key, value]: [string, any]) =>
+        get(right, key).map_or(false, (v: any) => ne(value, v))
+      );
   }
   return !is_equal(left, right);
 }
@@ -340,13 +615,13 @@ export function partial_cmp(left: any, right: any): Option<Ordering> {
   if (isPartialOrd(left) && isPartialOrd(right)) {
     return left.partial_cmp(right);
   }
-  let le = left <= right;
-  let ge = left >= right;
-  if (!le && !ge) {
+  let less_equal = le(left, right);
+  let greater_equal = ge(left, right);
+  if (!less_equal && !greater_equal) {
     return None();
-  } else if (!le && ge) {
+  } else if (!less_equal && greater_equal) {
     return Some(Greater);
-  } else if (le && !ge) {
+  } else if (less_equal && !greater_equal) {
     return Some(Less);
   } else {
     return Some(Equal);
@@ -395,9 +670,9 @@ export function cmp(left: any, right: any): Ordering {
   if (isOrd(left) && isOrd(right)) {
     return left.cmp(right);
   }
-  if (left < right) {
+  if (lt(left, right)) {
     return Less;
-  } else if (left > right) {
+  } else if (gt(left, right)) {
     return Greater;
   } else {
     return Equal;
@@ -413,7 +688,7 @@ export function min(v1: any, v2: any): any {
   if (isOrd(v1) && isOrd(v2)) {
     return v1.min(v2);
   }
-  return minnum(v1, v2);
+  return le(v1, v2) ? v1 : v2;
 }
 
 /**
@@ -452,7 +727,7 @@ export function max(v1: any, v2: any): any {
   if (isOrd(v1) && isOrd(v2)) {
     return v1.max(v2);
   }
-  return maxnum(v1, v2);
+  return le(v1, v2) ? v2 : v1;
 }
 
 /**
@@ -483,14 +758,14 @@ export function max_by_key<T, K>(v1: T, v2: T, f: (x: T) => K): T {
 export function clamp<T extends Ord>(that: T, min: T, max: T): T;
 export function clamp<T>(that: T, min: T, max: T): T;
 export function clamp(that: any, min: any, max: any): any {
-  assert(min <= max);
   if (isOrd(that) && isOrd(min) && isOrd(max)) {
+    assert(min.le(max));
     return that.clamp(min, max);
   }
-
-  if (that < min) {
+  assert(le(min, max));
+  if (lt(that, min)) {
     return min;
-  } else if (that > max) {
+  } else if (gt(that, max)) {
     return max;
   } else {
     return that;
@@ -568,14 +843,6 @@ export class Option<T> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartial
   public constructor(payload: OptionVariant<T>) {
     super();
     this.payload = payload;
-  }
-
-  public static some<T>(payload: T): Option<T> {
-    return new Option(SomeVariant(payload));
-  }
-
-  public static none<T = undefined>(): Option<T> {
-    return new Option(NoneVariant());
   }
 
   public eq(other: Option<T>): boolean {
@@ -853,8 +1120,6 @@ export class Option<T> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartial
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     switch (this.payload.type) {
       case OptionType.Some:
@@ -908,12 +1173,27 @@ export class Option<T> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPartial
   }
 }
 
+export interface OptionStatic {
+  Self: Option<any>;
+  Some<T>(payload: T): Option<T>;
+  None<T = undefined>(): Option<T>;
+}
+
+export var OptionConstructor: OptionStatic = {} as OptionStatic;
+
+OptionConstructor.Some = function<T>(payload: T): Option<T> {
+  return new Option(SomeVariant(payload));
+};
+OptionConstructor.None = function<T = undefined>(): Option<T> {
+  return new Option(NoneVariant());
+};
+
 export function Some<T>(payload: T): Option<T> {
-  return Option.some<T>(payload);
+  return OptionConstructor.Some<T>(payload);
 }
 
 export function None<T = undefined>(): Option<T> {
-  return Option.none<T>();
+  return OptionConstructor.None<T>();
 }
 
 export enum ResultType {
@@ -949,14 +1229,6 @@ export class Result<T, E> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPart
   public constructor(payload: ResultVariant<T, E>) {
     super();
     this.payload = payload;
-  }
-
-  public static ok<T = any, E = undefined>(payload: T): Result<T, E> {
-    return new Result(OkVariant(payload));
-  }
-
-  public static err<T = undefined, E = any>(payload: E): Result<T, E> {
-    return new Result(ErrVariant(payload));
   }
 
   public eq(other: Result<T, E>): boolean {
@@ -1155,8 +1427,6 @@ export class Result<T, E> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPart
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     switch (this.payload.type) {
       case ResultType.Ok:
@@ -1199,10 +1469,25 @@ export class Result<T, E> extends ImplTry(ImplOrd(ImplPartialOrd(ImplEq(ImplPart
   }
 }
 
+export interface ResultStatic {
+  Self: Result<any, any>;
+  Ok<T = any, E = undefined>(payload: T): Result<T, E>;
+  Err<T = undefined, E = any>(payload: E): Result<T, E>;
+}
+
+export var ResultConstructor: ResultStatic = {} as ResultStatic;
+
+ResultConstructor.Ok = function<T = any, E = undefined>(payload: T): Result<T, E> {
+  return new Result(OkVariant(payload));
+};
+ResultConstructor.Err = function<T = undefined, E = any>(payload: E): Result<T, E> {
+  return new Result(ErrVariant(payload));
+};
+
 export function Ok<T = any, E = undefined>(payload: T): Result<T, E> {
-  return Result.ok<T, E>(payload);
+  return ResultConstructor.Ok<T, E>(payload);
 }
 
 export function Err<T = undefined, E = any>(payload: E): Result<T, E> {
-  return Result.err<T, E>(payload);
+  return ResultConstructor.Err<T, E>(payload);
 }

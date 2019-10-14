@@ -18,7 +18,7 @@ class Point {
 
 describe("fmt", () => {
   test("format", () => {
-    assert_eq(format("{}", undefined), "undefined");
+    assert_eq(format("{}", undefined), "()");
     assert_eq(format("{}", null), "null");
     assert_eq(format("{}", 1), "1");
     assert_eq(format("{}", BigInt(1)), "1");
@@ -26,10 +26,10 @@ describe("fmt", () => {
     assert_eq(format("{}", function() {}), "function () { }");
     assert_eq(format("{}", () => {}), "function () { }");
     assert_eq(format("{}", Symbol.iterator), "Symbol(Symbol.iterator)");
-    assert_eq(format("{}", [1, 2]), "[1,2]");
-    assert_eq(format("{}", { foo: "bar" }), '{"foo":"bar"}');
+    assert_eq(format("{}", [1, 2]), "1,2");
+    assert_eq(format("{}", { foo: "bar" }), "[object Object]");
 
-    assert_eq(format("{:?}", undefined), "undefined");
+    assert_eq(format("{:?}", undefined), "()");
     assert_eq(format("{:?}", null), "null");
     assert_eq(format("{:?}", 1), "1");
     assert_eq(format("{:?}", BigInt(1)), "1");

@@ -1,9 +1,11 @@
+import { isNil, isFunction } from "./internal";
+
 export interface Debug {
   fmt_debug(): string;
 }
 
 export function isDebug(t: any): t is Debug {
-  return typeof t === "object" && t !== null && (t as Debug).fmt_debug !== undefined;
+  return !isNil(t) && isFunction((t as Debug).fmt_debug);
 }
 
 export interface Display {
@@ -11,61 +13,77 @@ export interface Display {
 }
 
 export function isDisplay(t: any): t is Display {
-  return typeof t === "object" && t !== null && (t as Display).fmt_display !== undefined;
-}
-
-function fmt_builtin(t: any): string {
-  switch (typeof t) {
-    case "object": {
-      if (t === null) {
-        return "null";
-      } else if (t instanceof Array) {
-        let fmt = "[";
-        for (let i = 0; i < t.length; ++i) {
-          fmt += fmt_display(t[i]);
-          if (i !== t.length - 1) {
-            fmt += ",";
-          }
-        }
-        fmt += "]";
-        return fmt;
-      } else {
-        let fmt = "{";
-        for (let p in t) {
-          if (t.hasOwnProperty(p)) {
-            fmt += fmt_display(p);
-            fmt += ":";
-            fmt += fmt_display(t[p]);
-            fmt += ",";
-          }
-        }
-        fmt = fmt.substr(0, fmt.length - 1);
-        fmt += "}";
-        return fmt;
-      }
-    }
-    case "string":
-      return `"${t}"`;
-    case "symbol":
-      return t.toString();
-    default:
-      return `${t}`;
-  }
+  return !isNil(t) && isFunction((t as Display).fmt_display);
 }
 
 function fmt_debug(t: any): string {
   if (isDebug(t)) {
     return t.fmt_debug();
   }
-  return fmt_builtin(t);
+  switch (typeof t) {
+    case "object": {
+      if (t === null) {
+        return "null";
+      }
+      let fmt = "{";
+      for (let p in t) {
+        if (t.hasOwnProperty(p)) {
+          fmt += fmt_debug(p);
+          fmt += ":";
+          fmt += fmt_debug(t[p]);
+          fmt += ",";
+        }
+      }
+      if (fmt.length > 1) {
+        fmt = fmt.substr(0, fmt.length - 1);
+      }
+      fmt += "}";
+      return fmt;
+    }
+    case "string":
+      return `"${t}"`;
+    case "symbol":
+      return t.toString();
+    case "undefined":
+      return "()";
+    default:
+      return `${t}`;
+  }
 }
 
 function fmt_display(t: any): string {
   if (isDisplay(t)) {
     return t.fmt_display();
   }
-  return fmt_builtin(t);
+  switch (typeof t) {
+    case "string":
+      return `"${t}"`;
+    case "symbol":
+      return t.toString();
+    case "undefined":
+      return "()";
+    default:
+      return `${t}`;
+  }
 }
+
+declare global {
+  interface Array<T> {
+    fmt_debug(): string;
+  }
+}
+
+Array.prototype.fmt_debug = function() {
+  let fmt = "[";
+  for (let i = 0; i < this.length; ++i) {
+    fmt += fmt_debug(this[i]);
+    if (i !== this.length - 1) {
+      fmt += ",";
+    }
+  }
+  fmt += "]";
+  return fmt;
+};
 
 enum FormatTrait {
   Display = "",

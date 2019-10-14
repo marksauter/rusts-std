@@ -87,8 +87,6 @@ export class FlatMap<I extends IteratorCommon, U extends IntoIterator>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FlatMap(clone(this.inner));
   }
@@ -164,8 +162,6 @@ export class FlatMapDoubleEndedIterator<
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FlatMapDoubleEndedIterator(clone(this.inner));
   }
@@ -242,8 +238,6 @@ export class Flatten<U extends IteratorCommon, I extends IteratorCommon>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Flatten<U, I>(clone(this.inner));
   }
@@ -325,8 +319,6 @@ export class FlattenDoubleEndedIterator<
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FlattenDoubleEndedIterator<U, I>(clone(this.inner));
   }
@@ -449,8 +441,6 @@ export class FlattenCompat<
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FlattenCompat<U, I>(clone(this.iter));
   }
@@ -646,8 +636,6 @@ export class FlattenCompatDoubleEndedIterator<
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new FlattenCompatDoubleEndedIterator<U, I>(clone(this.iter));
   }

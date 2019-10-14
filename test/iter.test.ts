@@ -3,9 +3,11 @@ import {
   IteratorBase,
   DoubleEndedIterator,
   Option,
+  OptionConstructor,
   Some,
   None,
   Result,
+  ResultConstructor,
   Ok,
   Err,
   Ordering,
@@ -27,6 +29,7 @@ import {
   range_inclusive,
   range_from,
   checked_add,
+  abs,
   i8_checked_add,
   i8_checked_mul,
   i8_checked_div,
@@ -34,7 +37,8 @@ import {
   u8_checked_div,
   U64_MAX,
   I64_MAX,
-  I64_MIN
+  I64_MIN,
+  NumberConstructor
 } from "../src/std";
 import { assert, assert_eq, should_panic } from "../src/macros.test";
 
@@ -516,7 +520,7 @@ describe("Iterator", () => {
     it = new StubSizeHint(U64_MAX, None<number>()).step_by(1);
     assert_eq(it.size_hint(), [U64_MAX, None<number>()]);
     it.next();
-    assert_eq(it.size_hint(), [U64_MAX, None<number>()]);
+    assert_eq(it.size_hint(), [U64_MAX - 1, None<number>()]);
 
     // still infinite with larger step
     it = new StubSizeHint(7, None()).step_by(3);
@@ -1460,31 +1464,31 @@ describe("Iterator", () => {
       range(0, 10)
         .cycle()
         .take(5)
-        .sum(),
+        .sum(NumberConstructor),
       10
     );
     assert_eq(
       range(0, 10)
         .cycle()
         .take(15)
-        .sum(),
+        .sum(NumberConstructor),
       55
     );
     assert_eq(
       range(0, 10)
         .cycle()
         .take(25)
-        .sum(),
+        .sum(NumberConstructor),
       100
     );
 
     let iter = range(0, 10).cycle();
     iter.nth(14);
-    assert_eq(iter.take(8).sum(), 38);
+    assert_eq(iter.take(8).sum(NumberConstructor), 38);
 
     iter = range(0, 10).cycle();
     iter.nth(9);
-    assert_eq(iter.take(3).sum(), 3);
+    assert_eq(iter.take(3).sum(NumberConstructor), 3);
   });
 
   test("iterator_nth", () => {
@@ -1608,14 +1612,14 @@ describe("Iterator", () => {
         .slice(0, 4)
         .iter()
         .cloned()
-        .sum(),
+        .sum(NumberConstructor),
       6
     );
     assert_eq(
       v
         .iter()
         .cloned()
-        .sum(),
+        .sum(NumberConstructor),
       55
     );
     assert_eq(
@@ -1623,12 +1627,48 @@ describe("Iterator", () => {
         .slice(0, 0)
         .iter()
         .cloned()
-        .sum(),
+        .sum(NumberConstructor),
       0
     );
   });
 
-  // TODO: fix try_sum and test here...
+  test("iterator_sum_result", () => {
+    let v: Result<number, undefined>[] = [Ok(1), Ok(2), Ok(3), Ok(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .sum(ResultConstructor, NumberConstructor),
+      Ok(10)
+    );
+    v = [Ok(1), Err(undefined), Ok(3), Ok(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .sum(ResultConstructor, NumberConstructor),
+      Err(undefined)
+    );
+  });
+
+  test("iterator_sum_option", () => {
+    let v: Option<number>[] = [Some(1), Some(2), Some(3), Some(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .sum(OptionConstructor, NumberConstructor),
+      Some(10)
+    );
+    v = [Some(1), None(), Some(3), Some(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .sum(OptionConstructor, NumberConstructor),
+      None()
+    );
+  });
 
   test("iterator_product", () => {
     let v = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -1637,7 +1677,7 @@ describe("Iterator", () => {
         .slice(0, 4)
         .iter()
         .cloned()
-        .product(),
+        .product(NumberConstructor),
       0
     );
     assert_eq(
@@ -1645,7 +1685,7 @@ describe("Iterator", () => {
         .slice(1, 5)
         .iter()
         .cloned()
-        .product(),
+        .product(NumberConstructor),
       24
     );
     assert_eq(
@@ -1653,23 +1693,61 @@ describe("Iterator", () => {
         .slice(0, 0)
         .iter()
         .cloned()
-        .product(),
+        .product(NumberConstructor),
       1
+    );
+  });
+
+  test("iterator_product_result", () => {
+    let v: Result<number, undefined>[] = [Ok(1), Ok(2), Ok(3), Ok(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .product(ResultConstructor, NumberConstructor),
+      Ok(24)
+    );
+    v = [Ok(1), Err(undefined), Ok(3), Ok(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .product(ResultConstructor, NumberConstructor),
+      Err(undefined)
+    );
+  });
+
+  test("iterator_product_option", () => {
+    let v: Option<number>[] = [Some(1), Some(2), Some(3), Some(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .product(OptionConstructor, NumberConstructor),
+      Some(24)
+    );
+    v = [Some(1), None(), Some(3), Some(4)];
+    assert_eq(
+      v
+        .iter()
+        .cloned()
+        .product(OptionConstructor, NumberConstructor),
+      None()
     );
   });
 
   // test("iterator_product_result", () => {
   //   let v: [Result<number, undefined>] = [Ok(1), Ok(2), Ok(3), Ok(4)];
-  //   assert_eq(v.iter().cloned().product(), Ok(24));
+  //   assert_eq(v.iter().cloned().product(NumberConstructor), Ok(24));
   //   let v: [Result<number, undefined>] = [Ok(1), Err(undefined), Ok(3), Ok(4)];
-  //   assert_eq(v.iter().cloned().product(), Err(undefined));
+  //   assert_eq(v.iter().cloned().product(NumberConstructor), Err(undefined));
   // })
 
   // test("iterator_product_option", () => {
   //   let v: [Option<number>] = [Some(1), Some(2), Some(3), Some(4)];
-  //   assert_eq(v.iter().cloned().product(), Some(24));
+  //   assert_eq(v.iter().cloned().product(NumberConstructor), Some(24));
   //   let v: [Option<number>] = [Some(1), None(), Some(3), Some(4)];
-  //   assert_eq(v.iter().cloned().product(), None());
+  //   assert_eq(v.iter().cloned().product(NumberConstructor), None());
   // })
 
   class Mod3 extends ImplOrd(ImplPartialOrd(ImplEq(ImplPartialEq(Self)))) {
@@ -2083,7 +2161,7 @@ describe("Iterator", () => {
     assert_eq(
       xs
         .iter()
-        .max_by_key((x: number) => Math.abs(x))
+        .max_by_key((x: number) => abs(x))
         .unwrap(),
       -10
     );
@@ -2094,7 +2172,7 @@ describe("Iterator", () => {
     assert_eq(
       xs
         .iter()
-        .max_by((x: number, y: number) => cmp(Math.abs(x), Math.abs(y)))
+        .max_by((x: number, y: number) => cmp(abs(x), abs(y)))
         .unwrap(),
       -10
     );
@@ -2105,7 +2183,7 @@ describe("Iterator", () => {
     assert_eq(
       xs
         .iter()
-        .min_by_key((x: number) => Math.abs(x))
+        .min_by_key((x: number) => abs(x))
         .unwrap(),
       0
     );
@@ -2116,7 +2194,7 @@ describe("Iterator", () => {
     assert_eq(
       xs
         .iter()
-        .min_by((x: number, y: number) => cmp(Math.abs(x), Math.abs(y)))
+        .min_by((x: number, y: number) => cmp(abs(x), abs(y)))
         .unwrap(),
       0
     );
@@ -2783,11 +2861,11 @@ describe("Iterator", () => {
   });
 
   test("range_inclusive_folds", () => {
-    assert_eq(range_inclusive(1, 10).sum(), 55);
+    assert_eq(range_inclusive(1, 10).sum(NumberConstructor), 55);
     assert_eq(
       range_inclusive(1, 10)
         .rev()
-        .sum(),
+        .sum(NumberConstructor),
       55
     );
 
@@ -3178,7 +3256,7 @@ describe("Iterator", () => {
       assert_eq(iter.next(), Some(14)); // stopped in back, state Back
       assert_eq(
         iter.try_fold<number, Option<number>>(0, Option, (acc: number, x: number) => Some(acc + x)),
-        Some(range(15, 20).sum())
+        Some(range(15, 20).sum(NumberConstructor))
       );
     }
     {
@@ -3189,7 +3267,7 @@ describe("Iterator", () => {
       assert_eq(iter.next(), Some(4)); // stopped in front, state Front
       assert_eq(
         iter.try_fold<number, Option<number>>(0, Option, (acc: number, x: number) => Some(acc + x)),
-        Some(range(0, 4).sum())
+        Some(range(0, 4).sum(NumberConstructor))
       );
     }
     {
@@ -3452,11 +3530,14 @@ describe("Iterator", () => {
     let iter = range(1, 20).take_while(p);
     assert_eq(
       iter.try_fold<number, Option<number>>(0, Option, (x: number, y: number) => Some(x + y)),
-      Some(range(1, 10).sum())
+      Some(range(1, 10).sum(NumberConstructor))
     );
     assert_eq(iter.next(), None()); // flag should be set
     iter = range(1, 20).take_while(p);
-    assert_eq(iter.fold<number>(0, (x: number, y: number) => x + y), range(1, 10).sum());
+    assert_eq(
+      iter.fold<number>(0, (x: number, y: number) => x + y),
+      range(1, 10).sum(NumberConstructor)
+    );
 
     iter = range(10, 50).take_while((x: number) => x !== 40);
     assert_eq(iter.try_fold<number, Option<number>>(0, Option, i8_checked_add), None());
@@ -3626,8 +3707,8 @@ describe("Iterator", () => {
     assert_eq(
       range(0, 10)
         .map(identity)
-        .sum(),
-      range(0, 10).sum()
+        .sum(NumberConstructor),
+      range(0, 10).sum(NumberConstructor)
     );
 
     // composition
@@ -3638,10 +3719,10 @@ describe("Iterator", () => {
       range(0, 10)
         .map(f)
         .map(g)
-        .sum(),
+        .sum(NumberConstructor),
       range(0, 10)
         .map(h)
-        .sum()
+        .sum(NumberConstructor)
     );
   });
 
@@ -3652,8 +3733,8 @@ describe("Iterator", () => {
     assert_eq(
       once(42)
         .flat_map(f)
-        .sum(),
-      f(42).sum()
+        .sum(NumberConstructor),
+      f(42).sum(NumberConstructor)
     );
   });
 
@@ -3661,8 +3742,8 @@ describe("Iterator", () => {
     assert_eq(
       range(0, 10)
         .flat_map((x: number) => once(x))
-        .sum(),
-      range(0, 10).sum()
+        .sum(NumberConstructor),
+      range(0, 10).sum(NumberConstructor)
     );
   });
 
@@ -3673,10 +3754,10 @@ describe("Iterator", () => {
       range(0, 10)
         .flat_map(f)
         .flat_map(g)
-        .sum(),
+        .sum(NumberConstructor),
       range(0, 10)
         .flat_map((x: number) => f(x).flat_map(g))
-        .sum()
+        .sum(NumberConstructor)
     );
   });
 
@@ -3687,7 +3768,7 @@ describe("Iterator", () => {
     assert(empty<number>().is_sorted());
     assert(![0.0, 1.0, NaN].iter().is_sorted());
     assert([-2, -1, 0, 3].iter().is_sorted());
-    assert(![-2, -1, 0, 3].iter().is_sorted_by_key((n: number) => Math.abs(n)));
+    assert(![-2, -1, 0, 3].iter().is_sorted_by_key((n: number) => abs(n)));
     assert(!["c", "bb", "aaa"].iter().is_sorted());
     assert(["c", "bb", "aaa"].iter().is_sorted_by_key((s: string) => s.len()));
   });

@@ -104,3 +104,8 @@ export const todo = unimplemented;
 export function abstract_panic(class_name: string, method_name: string) {
   unimplemented("abstract {:?}.{:?}: this method must be defined", class_name, method_name);
 }
+
+export function trait_panic(method_name: string, t: any) {
+  let msg = format("no method named {:?} found for type {:?}", method_name, t);
+  throw new Error(msg);
+}

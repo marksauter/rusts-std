@@ -76,8 +76,6 @@ export class Zip<A extends IteratorCommon, B extends IteratorCommon>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Zip(clone(this.a), clone(this.b));
   }
@@ -141,8 +139,6 @@ export class ZipExactSizeIterator<A extends ExactSizeIterator, B extends ExactSi
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ZipExactSizeIterator(clone(this.a), clone(this.b));
   }
@@ -233,8 +229,6 @@ export class ZipExactSizeAndDoubleEndedIterator<
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ZipExactSizeAndDoubleEndedIterator(clone(this.a), clone(this.b));
   }

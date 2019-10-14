@@ -1,8 +1,18 @@
-export const I64_MAX = Number.MAX_VALUE;
-export const I64_MIN = -I64_MAX;
-export const U64_MAX = Number.MAX_VALUE;
 // [Machine epsilon]: https://en.wikipedia.org/wiki/Machine_epsilon
 export const EPSILON = 2.2204460492503131e-16;
+
+export const F64_MIN = -Number.MAX_VALUE;
+export const F64_MIN_POSITIVE = Number.MIN_VALUE;
+export const F64_MAX = Number.MAX_VALUE;
+
+export const I64_MAX = Number.MAX_SAFE_INTEGER;
+export const I64_MIN = -Number.MAX_SAFE_INTEGER;
+export const U64_MAX = Number.MAX_SAFE_INTEGER;
+
+export const NAN = NaN;
+export const INFINITY = Infinity;
+export const NEG_INFINITY = -Infinity;
+
 export const E = Math.E;
 export const FRAC_1_PI = 1 / Math.PI;
 export const FRAC_1_SQRT_2 = Math.SQRT1_2;

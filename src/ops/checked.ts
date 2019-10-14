@@ -1,7 +1,7 @@
-import { i64, integer, Option, Some, None, I64_MAX, I64_MIN, U64_MAX } from "../internal";
+import { i64, integer, Option, Some, None, I64_MAX, I64_MIN, U64_MAX, abs } from "../internal";
 
 export function approx_eq(a: number, b: number): boolean {
-  return Math.abs(a - b) <= 1.0e-6;
+  return abs(a - b) <= 1.0e-6;
 }
 
 export function is_i8(a: number): boolean {

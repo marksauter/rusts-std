@@ -1,4 +1,6 @@
 import {
+  isNil,
+  isFunction,
   // self.ts
   Self,
   // mixin.ts
@@ -12,6 +14,9 @@ import {
   // debug.ts
   Debug,
   format,
+  // num.ts
+  NumberStatic,
+  NumberConstructor,
   // try.ts
   ImplTry,
   Try,
@@ -20,11 +25,15 @@ import {
   // option.ts
   Option,
   OptionType,
+  OptionStatic,
+  OptionConstructor,
   Some,
   None,
   // result.ts
   Result,
   ResultType,
+  ResultStatic,
+  ResultConstructor,
   Ok,
   Err,
   // cmpt.ts
@@ -42,19 +51,13 @@ import {
   gt,
   max,
   max_by,
-  max_by_key,
   min,
   min_by,
-  min_by_key,
   // macros.ts
   abstract_panic,
   assert_eq,
   U64_MAX,
-  Add,
-  isAdd,
   add,
-  Mul,
-  isMul,
   mul
 } from "./internal";
 
@@ -363,38 +366,12 @@ export abstract class IteratorCommon<T = any> extends Self {
     return [ts, us];
   }
 
-  // FIXME
-  // public try_sum<R extends Try>(r: TryConstructor<R>): R
-  //   let map = this.map((x: R) => x.into_result())
-  //   let res = process_results<R["Okay"], R["Error"], typeof map, ReturnType<typeof map.sum>>(
-  //     map,
-  //     (i: ResultShunt) => i.sum()
-  //   );
-  //   let res_match = res.match();
-  //   switch (res_match) {
-  //     case ResultType.Ok: return r.from_okay(res_match.value);
-  //     case ResultType.Err: return r.from_error(res_match.value);
-  //   }
-  // }
-
-  // NOTE: The overload order matters here, need to check for primitive
-  // types first.
-  public sum<Self extends IteratorCommon<number>>(this: Self): number;
-  public sum<A extends Add, Self extends IteratorCommon<A>>(this: Self): A["Output"];
-  public sum(): any {
-    return this.fold(0, add);
+  public sum(r: Sum<this["Item"]>, ...inner_rs: Sum<any>[]): this["Item"] {
+    return r.sum(this, ...inner_rs);
   }
 
-  // public try_product<R extends Try & Add, Self extends IteratorCommon<R>>(r: TryConstructor<R>): R {
-  //   return process_results(iter.map((x: R) => x.into_result()), (i: ResultShunt) => i.product());
-  // }
-
-  // NOTE: The overload order matters here, need to check for primitive
-  // types first.
-  public product<Self extends IteratorCommon<number>>(this: Self): number;
-  public product<M extends Mul, Self extends IteratorCommon<M>>(this: Self): M["Output"];
-  public product(): any {
-    return this.fold(1, mul);
+  public product(r: Product<this["Item"]>, ...inner_rs: Product<any>[]): this["Item"] {
+    return r.product(this, ...inner_rs);
   }
 
   public cmp<I extends IntoIterator<this["Item"]>>(other: I): Ordering {
@@ -569,12 +546,19 @@ export abstract class IteratorCommon<T = any> extends Self {
   }
 }
 
-export abstract class IteratorBase<T = any> extends IteratorCommon<T> {
-  readonly isIteratorBase = true;
+export class IteratorBase<T = any> extends IteratorCommon<T> {
+  public isIteratorBase = true;
+
+  public Item!: any;
+
+  public next(): Option<this["Item"]> {
+    abstract_panic("IteratorBase", "next");
+    return (undefined as unknown) as Option<this["Item"]>;
+  }
 }
 
 export function isIteratorBase(t: any): t is IteratorBase {
-  return typeof t === "object" && t !== null && (t as IteratorBase).isIteratorBase;
+  return !isNil(t) && (t as IteratorBase).isIteratorBase === true;
 }
 
 export abstract class DoubleEndedIteratorCommon<T = any> extends IteratorCommon<T> {
@@ -623,8 +607,21 @@ export abstract class DoubleEndedIteratorCommon<T = any> extends IteratorCommon<
   public abstract rev(): any;
 }
 
-export abstract class DoubleEndedIterator<T = any> extends DoubleEndedIteratorCommon<T> {
-  readonly isDoubleEndedIterator = true;
+export class DoubleEndedIterator<T = any> extends DoubleEndedIteratorCommon<T> {
+  public isDoubleEndedIterator = true;
+
+  // Iterator
+  public Item!: any;
+
+  public next(): Option<this["Item"]> {
+    abstract_panic("DoubleEndedIterator", "next");
+    return (undefined as unknown) as Option<this["Item"]>;
+  }
+
+  public next_back(): Option<this["Item"]> {
+    abstract_panic("DoubleEndedIterator", "next_back");
+    return (undefined as unknown) as Option<this["Item"]>;
+  }
 
   // DoubleEndedIteratorCommon
   public nth_back(n: number): Option<this["Item"]> {
@@ -639,11 +636,19 @@ export abstract class DoubleEndedIterator<T = any> extends DoubleEndedIteratorCo
 }
 
 export function isDoubleEndedIterator(t: any): t is DoubleEndedIterator {
-  return typeof t === "object" && t !== null && (t as DoubleEndedIterator).isDoubleEndedIterator;
+  return !isNil(t) && (t as DoubleEndedIterator).isDoubleEndedIterator === true;
 }
 
-export abstract class ExactSizeIterator<T = any> extends IteratorCommon<T> {
-  readonly isExactSizeIterator = true;
+export class ExactSizeIterator<T = any> extends IteratorCommon<T> {
+  public isExactSizeIterator = true;
+
+  // Iterator
+  public Item!: any;
+
+  public next(): Option<this["Item"]> {
+    abstract_panic("ExactSizeIterator", "next");
+    return (undefined as unknown) as Option<this["Item"]>;
+  }
 
   public len(): number {
     let [lower, upper] = this.size_hint();
@@ -657,13 +662,24 @@ export abstract class ExactSizeIterator<T = any> extends IteratorCommon<T> {
 }
 
 export function isExactSizeIterator(t: any): t is ExactSizeIterator {
-  return typeof t === "object" && t !== null && (t as ExactSizeIterator).isExactSizeIterator;
+  return !isNil(t) && (t as ExactSizeIterator).isExactSizeIterator === true;
 }
 
-export abstract class ExactSizeAndDoubleEndedIterator<T = any> extends DoubleEndedIteratorCommon<
-  T
-> {
-  readonly isExactSizeAndDoubleEndedIterator = true;
+export class ExactSizeAndDoubleEndedIterator<T = any> extends DoubleEndedIteratorCommon<T> {
+  public isExactSizeAndDoubleEndedIterator = true;
+
+  // Iterator
+  public Item!: any;
+
+  public next(): Option<this["Item"]> {
+    abstract_panic("ExactSizeAndDoubleEndedIterator", "next");
+    return (undefined as unknown) as Option<this["Item"]>;
+  }
+
+  public next_back(): Option<this["Item"]> {
+    abstract_panic("ExactSizeAndDoubleEndedIterator", "next_back");
+    return (undefined as unknown) as Option<this["Item"]>;
+  }
 
   public rposition(predicate: (x: this["Item"]) => boolean): Option<number> {
     let n = this.len();
@@ -706,9 +722,7 @@ export abstract class ExactSizeAndDoubleEndedIterator<T = any> extends DoubleEnd
 
 export function isExactSizeAndDoubleEndedIterator(t: any): t is ExactSizeAndDoubleEndedIterator {
   return (
-    typeof t === "object" &&
-    t !== null &&
-    (t as ExactSizeAndDoubleEndedIterator).isExactSizeAndDoubleEndedIterator
+    !isNil(t) && (t as ExactSizeAndDoubleEndedIterator).isExactSizeAndDoubleEndedIterator === true
   );
 }
 
@@ -718,7 +732,7 @@ export interface FromIterator<Item> extends Self {
 }
 
 export function isFromIterator<Item>(t: any): t is FromIterator<Item> {
-  return typeof t === "object" && t !== null && (t as FromIterator<Item>).from_iter !== undefined;
+  return !isNil(t) && isFunction((t as FromIterator<Item>).from_iter);
 }
 
 export interface IntoIterator<
@@ -738,12 +752,48 @@ export interface IntoIterator<
 export function isIntoIterator<Item, IntoIter extends IteratorCommon<Item> = IteratorCommon<Item>>(
   t: any
 ): t is IntoIterator<Item, IntoIter> {
-  return (
-    typeof t === "object" &&
-    t !== null &&
-    (t as IntoIterator<Item, IntoIter>).into_iter !== undefined
-  );
+  return !isNil(t) && isFunction((t as IntoIterator<Item, IntoIter>).into_iter);
 }
+
+/**
+ * Trait to represent types that can be created by summing up an iterator.
+ */
+export interface Sum<R> extends Self {
+  sum<I extends IteratorCommon<R>>(iter: I, r?: Sum<any>, ...inner_rs: Sum<any>[]): this["Self"];
+}
+
+/**
+ * Trait to represent types that can be created by multiplying elements of an
+ * iterator.
+ */
+export interface Product<R> extends Self {
+  product<I extends IteratorCommon<R>>(
+    iter: I,
+    r?: Product<any>,
+    ...inner_rs: Product<any>[]
+  ): this["Self"];
+}
+
+declare module "./number" {
+  interface NumberStatic {
+    sum<I extends IteratorCommon<number>>(iter: I, ...inner_rs: Sum<any>[]): number;
+    product<I extends IteratorCommon<number>>(iter: I, ...inner_rs: Product<any>[]): number;
+  }
+}
+
+NumberConstructor.sum = function<I extends IteratorCommon<number>>(
+  iter: I,
+  ..._inner_rs: Sum<any>[]
+): number {
+  return iter.fold(0, add);
+};
+
+NumberConstructor.product = function<I extends IteratorCommon<number>>(
+  iter: I,
+  ..._inner_rs: Product<any>[]
+): number {
+  return iter.fold(1, mul);
+};
 
 export interface Extend<Item> {
   // Extends a collection with the contents of an iterator.
@@ -755,7 +805,7 @@ export interface Extend<Item> {
  */
 // export const ImplFusedIterator = <T extends AnyConstructor<IteratorCommon>>(Base: T) =>
 //   class FusedIterator extends Base {
-//     readonly isFusedIterator = true;
+//     public isFusedIterator = true;
 //   };
 //
 // export type FusedIterator = Mixin<typeof ImplFusedIterator>;
@@ -795,20 +845,9 @@ export interface Extend<Item> {
 //
 // export type TrustedRandomAccess = Mixin<typeof ImplTrustedRandomAccess>;
 
-export function process_results<T, E, I extends IteratorCommon<Result<T, E>>, U>(
-  iter: I,
-  f: (shunt: ResultShunt<T, E, I>) => U
-): Result<U, E> {
-  let error: Result<undefined, E> = Ok(undefined);
-  let shunt = new ResultShunt<T, E, I>(iter, error);
-  let value = f(shunt);
-  return error.map(() => value);
-}
-
-export class ResultShunt<T, E, I extends IteratorCommon<Result<T, E>>> extends IteratorBase<T> {
-  public Self!: ResultShunt<T, E, I>;
-
-  public Item!: T;
+export class ProcessResults<T, E, I extends IteratorCommon<Result<T, E>>> extends IteratorBase<T>
+  implements Debug {
+  public Self!: ProcessResults<T, E, I>;
 
   public iter: I;
   public error: Result<undefined, E>;
@@ -819,38 +858,48 @@ export class ResultShunt<T, E, I extends IteratorCommon<Result<T, E>>> extends I
     this.error = error;
   }
 
-  public next(): Option<this["Item"]> {
-    return this.find(_ => true);
-  }
+  // Iterator
+  public Item!: T;
 
-  public size_hint(): [number, Option<number>] {
-    if (this.error.is_err()) {
-      return [0, Some(0)];
-    } else {
-      let [_, upper] = this.iter.size_hint();
-      return [0, upper];
+  public next(): Option<this["Item"]> {
+    let opt_match = this.iter.next().match();
+    switch (opt_match.type) {
+      case OptionType.Some: {
+        let res_match = opt_match.value.match();
+        switch (res_match.type) {
+          case ResultType.Ok:
+            return Some(res_match.value);
+          case ResultType.Err: {
+            this.error.clone_from(Err(res_match.value));
+            return None();
+          }
+        }
+      }
+      case OptionType.None:
+        return None();
     }
   }
 
-  public try_fold<Acc, R extends Try>(
-    init: Acc,
-    r: TryConstructor<R>,
-    f: (acc: Acc, item: this["Item"]) => R
-  ): R {
-    return this.iter
-      .try_fold<Acc, LoopState<Acc, R>>(init, LoopState, (acc: Acc, x: I["Item"]) => {
-        let match = x.match();
-        switch (match.type) {
-          case ResultType.Ok:
-            return LoopState.from_try(f(acc, match.value));
-          case ResultType.Err: {
-            this.error = Err(match.value);
-            return Break(r.from_okay(acc));
-          }
-        }
-      })
-      .into_try(r);
+  public size_hint(): [number, Option<number>] {
+    let [_, hi] = this.iter.size_hint();
+    return [0, hi];
   }
+
+  public fmt_debug(): string {
+    return format("ProcessResults({:?},{:?})", this.error, this.iter);
+  }
+}
+
+export function process_results<T, E, I extends IntoIterator<Result<T, E>>, R>(
+  iterable: I,
+  processor: (result: ProcessResults<T, E, I["IntoIter"]>) => R
+): Result<R, E> {
+  let iter = iterable.into_iter();
+  let error: Result<undefined, E> = Ok(undefined);
+
+  let result = processor(new ProcessResults<T, E, I["IntoIter"]>(iter, error));
+
+  return error.map(() => result);
 }
 
 /**
@@ -866,14 +915,15 @@ export function repeat<T>(element: T): Repeat<T> {
 export class Repeat<T> extends DoubleEndedIterator<T> implements Debug {
   public Self!: Repeat<T>;
 
-  public Item!: T;
-
   public element: T;
 
   public constructor(element: T) {
     super();
     this.element = element;
   }
+
+  // Iterator
+  public Item!: T;
 
   public next(): Option<this["Item"]> {
     return Some(clone(this.element));
@@ -907,14 +957,15 @@ export function repeat_with<T>(repeater: () => T): RepeatWith<T> {
 export class RepeatWith<T> extends IteratorBase<T> implements Debug {
   public Self!: RepeatWith<T>;
 
-  public Item!: T;
-
   public repeater: () => T;
 
   public constructor(repeater: () => T) {
     super();
     this.repeater = repeater;
   }
+
+  // Iterator
+  public Item!: T;
 
   public next(): Option<this["Item"]> {
     return Some(this.repeater());
@@ -942,15 +993,12 @@ export function empty<T>(): Empty<T> {
 export class Empty<T> extends ExactSizeAndDoubleEndedIterator<T> implements Debug {
   public Self!: Empty<T>;
 
-  public Item!: T;
-
   public constructor() {
     super();
   }
 
-  public static default() {
-    return new Empty();
-  }
+  // Iterator
+  public Item!: T;
 
   public next(): Option<this["Item"]> {
     return None();
@@ -968,10 +1016,12 @@ export class Empty<T> extends ExactSizeAndDoubleEndedIterator<T> implements Debu
     return 0;
   }
 
+  // Default
+  public static default() {
+    return new Empty();
+  }
+
   // Clone
-
-  readonly isClone = true;
-
   public clone(): Empty<T> {
     return new Empty();
   }
@@ -1021,8 +1071,6 @@ export class Once<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): Once<T> {
     return new Once(this.inner.clone());
   }
@@ -1047,14 +1095,15 @@ export function once_with<T>(gen: () => T): OnceWith<T> {
 export class OnceWith<T> extends ExactSizeAndDoubleEndedIterator<T> implements Debug {
   public Self!: OnceWith<T>;
 
-  public Item!: T;
-
   private gen: Option<() => T>;
 
   public constructor(gen: Option<() => T>) {
     super();
     this.gen = gen;
   }
+
+  // Iterator
+  public Item!: T;
 
   public next(): Option<this["Item"]> {
     return this.gen.take().map((f: () => T) => f());
@@ -1089,7 +1138,7 @@ export function from_fn<T>(f: () => Option<T>): FromFn<T> {
  * An iterator where each iteration calls the provided closure `() => Option<T>`
  */
 export class FromFn<T> extends IteratorBase<T> implements Debug {
-  public Item!: T;
+  public Self!: FromFn<T>;
 
   public f: () => Option<T>;
 
@@ -1097,6 +1146,9 @@ export class FromFn<T> extends IteratorBase<T> implements Debug {
     super();
     this.f = f;
   }
+
+  // Iterator
+  public Item!: T;
 
   public next(): Option<this["Item"]> {
     return this.f();
@@ -1119,7 +1171,7 @@ export function successors<T>(first: Option<T>, succ: (t: T) => Option<T>): Succ
  * An iterator where each successive item is computed based on the preceding one.
  */
 export class Successors<T> extends IteratorBase<T> implements Debug {
-  public Item!: T;
+  public Self!: Successors<T>;
 
   private first: Option<T>;
   private succ: (t: T) => Option<T>;
@@ -1129,6 +1181,9 @@ export class Successors<T> extends IteratorBase<T> implements Debug {
     this.first = first;
     this.succ = succ;
   }
+
+  // Iterator
+  public Item!: T;
 
   public next(): Option<this["Item"]> {
     return this.first.take().map((item: this["Item"]) => {
@@ -1287,11 +1342,19 @@ declare module "./cmp_option_result" {
     IntoIter: OptionIntoIter<T>;
 
     into_iter(): OptionIntoIter<T>;
+  }
 
-    // FromIterator
-    // public static from_iter<I extends IntoIterator<Option<T>>>(iter: I): Option<T> {
-    //
-    // }
+  interface OptionStatic {
+    sum<I extends IteratorCommon<Option<any>>>(
+      iter: I,
+      r: Sum<any>,
+      ...inner_rs: Sum<any>[]
+    ): this["Self"];
+    product<I extends IteratorCommon<Option<any>>>(
+      iter: I,
+      r: Product<any>,
+      ...inner_rs: Product<any>[]
+    ): this["Self"];
   }
 
   interface Result<T, E> {
@@ -1303,11 +1366,19 @@ declare module "./cmp_option_result" {
     IntoIter: ResultIntoIter<T>;
 
     into_iter(): ResultIntoIter<T>;
+  }
 
-    // FromIterator
-    // public static from_iter<I extends IntoIterator<Option<T>>>(iter: I): Option<T> {
-    //
-    // }
+  interface ResultStatic {
+    sum<I extends IteratorCommon<Result<any, any>>>(
+      iter: I,
+      r: Sum<any>,
+      ...inner_rs: Sum<any>[]
+    ): this["Self"];
+    product<I extends IteratorCommon<Result<any, any>>>(
+      iter: I,
+      r: Product<any>,
+      ...inner_rs: Product<any>[]
+    ): this["Self"];
   }
 }
 
@@ -1319,6 +1390,24 @@ Option.prototype.into_iter = function() {
 };
 Option.prototype[Symbol.iterator] = function() {
   return this.iter()[Symbol.iterator]();
+};
+
+OptionConstructor.sum = function(iter, r, ...inner_rs) {
+  // FIXME
+  // @ts-ignore
+  return iter
+    .map(x => x.ok_or(undefined))
+    .sum(ResultConstructor, r, ...inner_rs)
+    .ok();
+};
+
+OptionConstructor.product = function(iter, r, ...inner_rs) {
+  // FIXME
+  // @ts-ignore
+  return iter
+    .map(x => x.ok_or(undefined))
+    .product(ResultConstructor, r, ...inner_rs)
+    .ok();
 };
 
 class OptionItem<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone {
@@ -1354,8 +1443,6 @@ class OptionItem<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone 
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new OptionItem(this.opt.clone());
   }
@@ -1388,8 +1475,6 @@ class OptionIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone 
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new OptionIter(this.inner.clone());
   }
@@ -1422,8 +1507,6 @@ class OptionIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Cl
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new OptionIntoIter(this.inner.clone());
   }
@@ -1437,6 +1520,17 @@ Result.prototype.into_iter = function() {
 };
 Result.prototype[Symbol.iterator] = function() {
   return this.iter()[Symbol.iterator]();
+};
+
+ResultConstructor.sum = function(iter, r, ...inner_rs) {
+  // FIXME
+  // @ts-ignore
+  return process_results(iter, i => i.sum(r, ...inner_rs.slice(1)));
+};
+ResultConstructor.product = function(iter, r, ...inner_rs) {
+  // FIXME
+  // @ts-ignore
+  return process_results(iter, i => i.product(r, ...inner_rs.slice(1)));
 };
 
 class ResultIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone {
@@ -1466,8 +1560,6 @@ class ResultIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Clone 
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ResultIter(this.inner.clone());
   }
@@ -1500,8 +1592,6 @@ class ResultIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> implements Cl
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ResultIntoIter(this.inner.clone());
   }
@@ -1751,8 +1841,6 @@ export class ArrayIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> impleme
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ArrayIntoIter(this.as_array());
   }

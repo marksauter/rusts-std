@@ -1,17 +1,59 @@
-import { U64_MAX, assert } from "./internal";
+import { U64_MAX, INFINITY, assert } from "./internal";
 
 export function integer(n: number): number {
-  return Math.floor(n);
+  return floor(n);
 }
 
 export function i64(n: number): number {
-  return Math.round(n);
+  return round(n);
 }
 
 export function u64(n: number): number {
   assert(n >= 0 && n <= U64_MAX);
-  return Math.floor(n);
+  return floor(n);
 }
+
+export const is_nan = isNaN;
+
+export function is_infinite(x: number): boolean {
+  return abs(x) === INFINITY;
+}
+
+export function is_finite(x: number): boolean {
+  return abs(x) < INFINITY;
+}
+
+export function is_normal(x: number): boolean {
+  return x !== 0 && !is_infinite(x) && !is_nan(x);
+}
+
+export const abs = Math.abs;
+
+export function minnum(x: number, y: number): number {
+  if (is_nan(x)) {
+    return y;
+  } else if (is_nan(y)) {
+    return x;
+  } else {
+    return x <= y ? x : y;
+  }
+}
+
+export function maxnum(x: number, y: number): number {
+  if (is_nan(x)) {
+    return y;
+  } else if (is_nan(y)) {
+    return x;
+  } else {
+    return x <= y ? y : x;
+  }
+}
+
+export const floor = Math.floor;
+
+export const ceil = Math.ceil;
+
+export const round = Math.round;
 
 export function clamp_u64(n: number): number {
   let min = 0;
@@ -22,26 +64,6 @@ export function clamp_u64(n: number): number {
     return max;
   } else {
     return n;
-  }
-}
-
-export function minnum(x: number, y: number): number {
-  if (isNaN(x)) {
-    return y;
-  } else if (isNaN(y)) {
-    return x;
-  } else {
-    return x <= y ? x : y;
-  }
-}
-
-export function maxnum(x: number, y: number): number {
-  if (isNaN(x)) {
-    return y;
-  } else if (isNaN(y)) {
-    return x;
-  } else {
-    return x <= y ? y : x;
   }
 }
 

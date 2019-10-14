@@ -226,8 +226,6 @@ export class Chain<A extends IteratorCommon, B extends IteratorCommon<A["Item"]>
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new Chain(clone(this.a), clone(this.b));
   }
@@ -528,8 +526,6 @@ export class ChainDoubleEndedIterator<
   }
 
   // Clone
-  readonly isClone = true;
-
   public clone(): this["Self"] {
     return new ChainDoubleEndedIterator(clone(this.a), clone(this.b));
   }
