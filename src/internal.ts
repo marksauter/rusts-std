@@ -1,4 +1,3 @@
-export { test_macros } from "./macros.test";
 export * from "./types";
 export * from "./consts";
 export * from "./intrinsics";
