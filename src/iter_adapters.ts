@@ -4130,27 +4130,27 @@ declare module "./iter" {
 
     min_by_key<B>(f: (item: T) => B): Option<T>;
 
-    step_by(n: number): StepBy<this>;
+    step_by(n: number): StepBy<this["Self"]>;
 
-    map<B>(f: (x: T) => B): Map<this, B>;
+    map<B>(f: (x: T) => B): Map<this["Self"], B>;
 
-    filter(predicate: (item: T) => boolean): Filter<this>;
+    filter(predicate: (item: T) => boolean): Filter<this["Self"]>;
 
-    filter_map<B>(f: (item: T) => Option<B>): FilterMap<this, B>;
+    filter_map<B>(f: (item: T) => Option<B>): FilterMap<this["Self"], B>;
 
-    enumerate(): Enumerate<this>;
+    enumerate(): Enumerate<this["Self"]>;
 
-    peekable(): Peekable<this>;
+    peekable(): Peekable<this["Self"]>;
 
-    skip_while(predicate: (item: T) => boolean): SkipWhile<this>;
+    skip_while(predicate: (item: T) => boolean): SkipWhile<this["Self"]>;
 
-    take_while(predicate: (item: T) => boolean): TakeWhile<this>;
+    take_while(predicate: (item: T) => boolean): TakeWhile<this["Self"]>;
 
-    skip(n: number): Skip<this>;
+    skip(n: number): Skip<this["Self"]>;
 
-    take(n: number): Take<this>;
+    take(n: number): Take<this["Self"]>;
 
-    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this, St, B>;
+    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this["Self"], St, B>;
 
     //     // fuse<Self extends FusedIterator & ExactSizeIterator & DoubleEndedIterator>(
     //     //   this: Self
@@ -4169,9 +4169,9 @@ declare module "./iter" {
     //     // fuse<Self extends FusedIterator>(this: Self): FuseForFusedIterator;
     //     // fuse(): FuseForIterator;
 
-    inspect(f: (x: T) => void): Inspect<this>;
+    inspect(f: (x: T) => void): Inspect<this["Self"]>;
 
-    cloned(): Cloned<this>;
+    cloned(): Cloned<this["Self"]>;
 
     cycle<Self extends IteratorCommon<T> & Clone>(this: Self): Cycle<Self>;
   }
@@ -4181,36 +4181,36 @@ declare module "./iter" {
 
     min_by_key<B>(f: (item: T) => B): Option<T>;
 
-    step_by(n: number): StepBy<this>;
+    step_by(n: number): StepBy<this["Self"]>;
 
-    map<B>(f: (x: T) => B): MapDoubleEndedIterator<this, B>;
+    map<B>(f: (x: T) => B): MapDoubleEndedIterator<this["Self"], B>;
 
-    filter(predicate: (item: T) => boolean): FilterDoubleEndedIterator<this>;
+    filter(predicate: (item: T) => boolean): FilterDoubleEndedIterator<this["Self"]>;
 
-    filter_map<B>(f: (item: T) => Option<B>): FilterMapDoubleEndedIterator<this, B>;
+    filter_map<B>(f: (item: T) => Option<B>): FilterMapDoubleEndedIterator<this["Self"], B>;
 
-    enumerate(): Enumerate<this>;
+    enumerate(): Enumerate<this["Self"]>;
 
-    peekable(): PeekableDoubleEndedIterator<this>;
+    peekable(): PeekableDoubleEndedIterator<this["Self"]>;
 
-    skip_while(predicate: (item: T) => boolean): SkipWhile<this>;
+    skip_while(predicate: (item: T) => boolean): SkipWhile<this["Self"]>;
 
-    take_while(predicate: (item: T) => boolean): TakeWhile<this>;
+    take_while(predicate: (item: T) => boolean): TakeWhile<this["Self"]>;
 
-    skip(n: number): Skip<this>;
+    skip(n: number): Skip<this["Self"]>;
 
-    take(n: number): Take<this>;
+    take(n: number): Take<this["Self"]>;
 
-    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this, St, B>;
+    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this["Self"], St, B>;
 
-    inspect(f: (x: T) => void): InspectDoubleEndedIterator<this>;
+    inspect(f: (x: T) => void): InspectDoubleEndedIterator<this["Self"]>;
 
     /**
      * Reverses an iterator's direction.
      */
-    rev(): Rev<this>;
+    rev(): Rev<this["Self"]>;
 
-    cloned(): ClonedDoubleEndedIterator<this>;
+    cloned(): ClonedDoubleEndedIterator<this["Self"]>;
 
     cycle<Self extends IteratorCommon<T> & Clone>(this: Self): Cycle<Self>;
   }
@@ -4220,31 +4220,31 @@ declare module "./iter" {
 
     min_by_key<B>(f: (item: T) => B): Option<T>;
 
-    step_by(n: number): StepByExactSizeIterator<this>;
+    step_by(n: number): StepByExactSizeIterator<this["Self"]>;
 
-    map<B>(f: (x: T) => B): MapExactSizeIterator<this, B>;
+    map<B>(f: (x: T) => B): MapExactSizeIterator<this["Self"], B>;
 
-    filter(predicate: (item: T) => boolean): Filter<this>;
+    filter(predicate: (item: T) => boolean): Filter<this["Self"]>;
 
-    filter_map<B>(f: (item: T) => Option<B>): FilterMap<this, B>;
+    filter_map<B>(f: (item: T) => Option<B>): FilterMap<this["Self"], B>;
 
-    enumerate(): EnumerateExactSizeIterator<this>;
+    enumerate(): EnumerateExactSizeIterator<this["Self"]>;
 
-    peekable(): PeekableExactSizeIterator<this>;
+    peekable(): PeekableExactSizeIterator<this["Self"]>;
 
-    skip_while(predicate: (item: T) => boolean): SkipWhile<this>;
+    skip_while(predicate: (item: T) => boolean): SkipWhile<this["Self"]>;
 
-    take_while(predicate: (item: T) => boolean): TakeWhile<this>;
+    take_while(predicate: (item: T) => boolean): TakeWhile<this["Self"]>;
 
-    skip(n: number): SkipExactSizeIterator<this>;
+    skip(n: number): SkipExactSizeIterator<this["Self"]>;
 
-    take(n: number): TakeExactSizeIterator<this>;
+    take(n: number): TakeExactSizeIterator<this["Self"]>;
 
-    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this, St, B>;
+    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this["Self"], St, B>;
 
-    inspect(f: (x: T) => void): InspectExactSizeIterator<this>;
+    inspect(f: (x: T) => void): InspectExactSizeIterator<this["Self"]>;
 
-    cloned(): ClonedExactSizeIterator<this>;
+    cloned(): ClonedExactSizeIterator<this["Self"]>;
 
     cycle<Self extends IteratorCommon<T> & Clone>(this: Self): Cycle<Self>;
   }
@@ -4254,36 +4254,36 @@ declare module "./iter" {
 
     min_by_key<B>(f: (item: T) => B): Option<T>;
 
-    step_by(n: number): StepByExactSizeAndDoubleEndedIterator<this>;
+    step_by(n: number): StepByExactSizeAndDoubleEndedIterator<this["Self"]>;
 
-    map<B>(f: (x: T) => B): MapExactSizeAndDoubleEndedIterator<this, B>;
+    map<B>(f: (x: T) => B): MapExactSizeAndDoubleEndedIterator<this["Self"], B>;
 
-    filter(predicate: (item: T) => boolean): FilterDoubleEndedIterator<this>;
+    filter(predicate: (item: T) => boolean): FilterDoubleEndedIterator<this["Self"]>;
 
-    filter_map<B>(f: (item: T) => Option<B>): FilterMapDoubleEndedIterator<this, B>;
+    filter_map<B>(f: (item: T) => Option<B>): FilterMapDoubleEndedIterator<this["Self"], B>;
 
-    enumerate(): EnumerateExactSizeAndDoubleEndedIterator<this>;
+    enumerate(): EnumerateExactSizeAndDoubleEndedIterator<this["Self"]>;
 
-    peekable(): PeekableExactSizeAndDoubleEndedIterator<this>;
+    peekable(): PeekableExactSizeAndDoubleEndedIterator<this["Self"]>;
 
-    skip_while(predicate: (item: T) => boolean): SkipWhile<this>;
+    skip_while(predicate: (item: T) => boolean): SkipWhile<this["Self"]>;
 
-    take_while(predicate: (item: T) => boolean): TakeWhile<this>;
+    take_while(predicate: (item: T) => boolean): TakeWhile<this["Self"]>;
 
-    skip(n: number): SkipExactSizeAndDoubleEndedIterator<this>;
+    skip(n: number): SkipExactSizeAndDoubleEndedIterator<this["Self"]>;
 
-    take(n: number): TakeExactSizeAndDoubleEndedIterator<this>;
+    take(n: number): TakeExactSizeAndDoubleEndedIterator<this["Self"]>;
 
-    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this, St, B>;
+    scan<St, B>(initial_state: St, f: (st: St, item: T) => Option<B>): Scan<this["Self"], St, B>;
 
-    inspect(f: (x: T) => void): InspectExactSizeAndDoubleEndedIterator<this>;
+    inspect(f: (x: T) => void): InspectExactSizeAndDoubleEndedIterator<this["Self"]>;
 
     /**
      * Reverses an iterator's direction.
      */
-    rev(): RevExactSizeIterator<this>;
+    rev(): RevExactSizeIterator<this["Self"]>;
 
-    cloned(): ClonedExactSizeAndDoubleEndedIterator<this>;
+    cloned(): ClonedExactSizeAndDoubleEndedIterator<this["Self"]>;
 
     cycle<Self extends IteratorCommon<T> & Clone>(this: Self): Cycle<Self>;
   }

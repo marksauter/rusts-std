@@ -245,25 +245,25 @@ declare module "./iter" {
   interface ExactSizeAndDoubleEndedIterator<T> {
     zip<U extends ExactSizeAndDoubleEndedIterator>(
       other: U
-    ): ZipExactSizeAndDoubleEndedIterator<this, U["IntoIter"]>;
+    ): ZipExactSizeAndDoubleEndedIterator<this["Self"], U["IntoIter"]>;
     // FIXME
-    // zip<U extends IntoIterator<any, ExactSizeIterator<any>>>(other: U): ZipExactSizeIterator<this, U["IntoIter"]>;
-    // zip<U extends IntoIterator<any, IteratorCommon<any>>>(other: U): Zip<this, U["IntoIter"]>;
+    // zip<U extends IntoIterator<any, ExactSizeIterator<any>>>(other: U): ZipExactSizeIterator<this["Self"], U["IntoIter"]>;
+    // zip<U extends IntoIterator<any, IteratorCommon<any>>>(other: U): Zip<this["Self"], U["IntoIter"]>;
   }
 
   interface DoubleEndedIterator<T> {
-    zip<U extends IteratorCommon>(other: U): Zip<this, U["IntoIter"]>;
+    zip<U extends IteratorCommon>(other: U): Zip<this["Self"], U["IntoIter"]>;
   }
 
   interface ExactSizeIterator<T> {
-    zip<U extends ExactSizeIterator>(other: U): ZipExactSizeIterator<this, U["IntoIter"]>;
+    zip<U extends ExactSizeIterator>(other: U): ZipExactSizeIterator<this["Self"], U["IntoIter"]>;
     // FIXME
-    // zip<U extends IntoIterator<any, ExactSizeAndDoubleEndedIterator<any>>>(other: U): ZipExactSizeIterator<this, U["IntoIter"]>;
-    // zip<U extends IntoIterator<any, IteratorCommon<any>>>(other: U): Zip<this, U["IntoIter"]>;
+    // zip<U extends IntoIterator<any, ExactSizeAndDoubleEndedIterator<any>>>(other: U): ZipExactSizeIterator<this["Self"], U["IntoIter"]>;
+    // zip<U extends IntoIterator<any, IteratorCommon<any>>>(other: U): Zip<this["Self"], U["IntoIter"]>;
   }
 
   interface IteratorBase<T> {
-    zip<U extends IteratorCommon>(other: U): Zip<this, U["IntoIter"]>;
+    zip<U extends IteratorCommon>(other: U): Zip<this["Self"], U["IntoIter"]>;
   }
 }
 

@@ -648,43 +648,43 @@ export class FlattenCompatDoubleEndedIterator<
 
 declare module "./iter" {
   interface IteratorBase<T> {
-    flat_map<U extends IntoIterator>(f: (x: T) => U): FlatMap<this, U>;
+    flat_map<U extends IntoIterator>(f: (x: T) => U): FlatMap<this["Self"], U>;
 
-    flatten<U extends IteratorCommon>(): Flatten<U, this>;
+    flatten<U extends IteratorCommon>(): Flatten<U, this["Self"]>;
   }
 
   interface ExactSizeIterator<T> {
-    flat_map<U extends IntoIterator>(f: (x: T) => U): FlatMap<this, U>;
+    flat_map<U extends IntoIterator>(f: (x: T) => U): FlatMap<this["Self"], U>;
 
-    flatten<U extends IteratorCommon>(): Flatten<U, this>;
+    flatten<U extends IteratorCommon>(): Flatten<U, this["Self"]>;
   }
 
   interface DoubleEndedIterator<T> {
     // Separating DoubleEnded variant from Base variant to avoid uneccesary type confusion.
     flat_map<U extends IntoIterator<any, DoubleEndedIteratorCommon<any>>>(
       f: (x: T) => U
-    ): FlatMapDoubleEndedIterator<this, U>;
+    ): FlatMapDoubleEndedIterator<this["Self"], U>;
     // Downcast DoubleEndedIteratorCommon to IteratorCommon
-    flat_map_down<U extends IntoIterator>(f: (x: T) => U): FlatMap<this, U>;
+    flat_map_down<U extends IntoIterator>(f: (x: T) => U): FlatMap<this["Self"], U>;
 
     // Separating DoubleEnded variant from Base variant to avoid uneccesary type confusion.
-    flatten<U extends DoubleEndedIteratorCommon>(): FlattenDoubleEndedIterator<U, this>;
+    flatten<U extends DoubleEndedIteratorCommon>(): FlattenDoubleEndedIterator<U, this["Self"]>;
     // Downcast DoubleEndedIteratorCommon to IteratorCommon
-    flatten_down<U extends IteratorCommon>(): Flatten<U, this>;
+    flatten_down<U extends IteratorCommon>(): Flatten<U, this["Self"]>;
   }
 
   interface ExactSizeAndDoubleEndedIterator<T> {
     // Separating DoubleEnded variant from Base variant to avoid uneccesary type confusion.
     flat_map<U extends IntoIterator<any, DoubleEndedIteratorCommon<any>>>(
       f: (x: T) => U
-    ): FlatMapDoubleEndedIterator<this, U>;
+    ): FlatMapDoubleEndedIterator<this["Self"], U>;
     // Downcast DoubleEndedIteratorCommon to IteratorCommon
-    flat_map_down<U extends IntoIterator>(f: (x: T) => U): FlatMap<this, U>;
+    flat_map_down<U extends IntoIterator>(f: (x: T) => U): FlatMap<this["Self"], U>;
 
     // Separating DoubleEnded variant from Base variant to avoid uneccesary type confusion.
-    flatten<U extends DoubleEndedIteratorCommon>(): FlattenDoubleEndedIterator<U, this>;
+    flatten<U extends DoubleEndedIteratorCommon>(): FlattenDoubleEndedIterator<U, this["Self"]>;
     // Downcast DoubleEndedIteratorCommon to IteratorCommon
-    flatten_down<U extends IteratorCommon>(): Flatten<U, this>;
+    flatten_down<U extends IteratorCommon>(): Flatten<U, this["Self"]>;
   }
 }
 
