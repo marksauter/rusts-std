@@ -77,6 +77,7 @@ export class Rev<I extends DoubleEndedIterator> extends DoubleEndedIterator
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth_back(n);
   }
 
@@ -102,6 +103,7 @@ export class Rev<I extends DoubleEndedIterator> extends DoubleEndedIterator
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth(n);
   }
 
@@ -156,6 +158,7 @@ class RevExactSizeIterator<I extends ExactSizeAndDoubleEndedIterator>
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth_back(n);
   }
 
@@ -181,6 +184,7 @@ class RevExactSizeIterator<I extends ExactSizeAndDoubleEndedIterator>
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth(n);
   }
 
@@ -597,6 +601,7 @@ export class StepBy<I extends IteratorCommon> extends IteratorBase implements Cl
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.first_take) {
       this.first_take = false;
       let first = this.iter.next();
@@ -722,6 +727,7 @@ export class StepByExactSizeIterator<I extends ExactSizeIterator> extends ExactS
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.first_take) {
       this.first_take = false;
       let first = this.iter.next();
@@ -861,6 +867,7 @@ export class StepByExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleE
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.first_take) {
       this.first_take = false;
       let first = this.iter.next();
@@ -947,6 +954,7 @@ export class StepByExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleE
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     // `this.iter.nth_back(U64_MAX)` does the right thing here when `n`
     // is out of bounds because the length of `this.iter` does not exceed
     // `U64_MAX` (because `Iter extends ExactSizeIterator`) and `nth_back`
@@ -1583,6 +1591,7 @@ export class Enumerate<I extends IteratorCommon> extends IteratorBase implements
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth(n).map((a: I["Item"]): [number, I["Item"]] => {
       let i = this._count + n;
       this._count = i + 1;
@@ -1658,6 +1667,7 @@ export class EnumerateExactSizeIterator<I extends ExactSizeIterator> extends Exa
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth(n).map((a: I["Item"]): [number, I["Item"]] => {
       let i = this._count + n;
       this._count = i + 1;
@@ -1743,6 +1753,7 @@ export class EnumerateExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoub
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth(n).map((a: I["Item"]): [number, I["Item"]] => {
       let i = this._count + n;
       this._count = i + 1;
@@ -1787,6 +1798,7 @@ export class EnumerateExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoub
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     return this.iter.nth_back(n).map((a: I["Item"]) => {
       let len = this.iter.len();
       return [this._count + len, a];
@@ -1884,6 +1896,7 @@ export class Peekable<I extends IteratorBase> extends IteratorBase implements Cl
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     let match = this.peeked.take().match();
     switch (match.type) {
       case OptionType.Some: {
@@ -2045,6 +2058,7 @@ export class PeekableExactSizeIterator<I extends ExactSizeIterator> extends Exac
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     let match = this.peeked.take().match();
     switch (match.type) {
       case OptionType.Some: {
@@ -2206,6 +2220,7 @@ export class PeekableDoubleEndedIterator<I extends DoubleEndedIterator> extends 
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     let match = this.peeked.take().match();
     switch (match.type) {
       case OptionType.Some: {
@@ -2423,6 +2438,7 @@ export class PeekableExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubl
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     let match = this.peeked.take().match();
     switch (match.type) {
       case OptionType.Some: {
@@ -2785,6 +2801,7 @@ export class Skip<I extends IteratorCommon> extends IteratorBase implements Clon
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.n === 0) {
       return this.iter.nth(n);
     } else {
@@ -2899,6 +2916,7 @@ export class SkipExactSizeIterator<I extends ExactSizeIterator> extends ExactSiz
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.n === 0) {
       return this.iter.nth(n);
     } else {
@@ -3014,6 +3032,7 @@ export class SkipExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.n === 0) {
       return this.iter.nth(n);
     } else {
@@ -3100,6 +3119,7 @@ export class SkipExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     let len = this.len();
     if (n < len) {
       return this.iter.nth_back(n);
@@ -3172,6 +3192,7 @@ export class Take<I extends IteratorCommon> extends IteratorBase implements Clon
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.n > n) {
       this.n -= n + 1;
       return this.iter.nth(n);
@@ -3250,7 +3271,6 @@ export class TakeExactSizeIterator<I extends ExactSizeIterator> extends ExactSiz
 
   constructor(iter: I, n: number) {
     super();
-    assert(n >= 0);
     this.iter = iter;
     this.n = u64(n);
   }
@@ -3268,6 +3288,7 @@ export class TakeExactSizeIterator<I extends ExactSizeIterator> extends ExactSiz
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.n > n) {
       this.n -= n + 1;
       return this.iter.nth(n);
@@ -3347,7 +3368,6 @@ export class TakeExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
 
   constructor(iter: I, n: number) {
     super();
-    assert(n >= 0);
     this.iter = iter;
     this.n = u64(n);
   }
@@ -3365,6 +3385,7 @@ export class TakeExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (this.n > n) {
       this.n -= n + 1;
       return this.iter.nth(n);
@@ -3436,6 +3457,7 @@ export class TakeExactSizeAndDoubleEndedIterator<I extends ExactSizeAndDoubleEnd
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     let len = this.iter.len();
     if (this.n > n) {
       let m = u64_saturating_sub(len, this.n) + n;

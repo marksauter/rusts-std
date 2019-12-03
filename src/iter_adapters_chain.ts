@@ -145,6 +145,7 @@ export class Chain<A extends IteratorCommon, B extends IteratorCommon<A["Item"]>
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     switch (this.state) {
       case ChainState.Both:
       case ChainState.Front: {
@@ -344,6 +345,7 @@ export class ChainDoubleEndedIterator<
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     switch (this.state) {
       case ChainState.Both:
       case ChainState.Front: {
@@ -447,6 +449,7 @@ export class ChainDoubleEndedIterator<
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     switch (this.state) {
       case ChainState.Both:
       case ChainState.Back: {

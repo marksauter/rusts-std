@@ -334,6 +334,8 @@ export const Greater = Ordering.greater();
 
 declare global {
   interface Array<T> {
+    first(): Option<T>;
+    last(): Option<T>;
     get(index: number): Option<T>;
     isPartialEq: true;
     eq(other: T[]): boolean;
@@ -372,6 +374,19 @@ declare global {
   }
 }
 
+Array.prototype.first = function() {
+  if (0 in this) {
+    return Some(this[0]);
+  }
+  return None();
+};
+Array.prototype.last = function() {
+  let index = this.length - 1;
+  if (index in this) {
+    return Some(this[index]);
+  }
+  return None();
+};
 Array.prototype.get = function(index) {
   if (index in this) {
     return Some(this[index]);

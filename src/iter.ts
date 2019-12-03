@@ -57,6 +57,7 @@ import {
   abstract_panic,
   assert_eq,
   U64_MAX,
+  u64,
   add,
   mul
 } from "./internal";
@@ -104,6 +105,7 @@ export abstract class IteratorCommon<T = any> extends Self {
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     for (let x of this) {
       if (n === 0) {
         return Some(x);
@@ -162,7 +164,7 @@ export abstract class IteratorCommon<T = any> extends Self {
     }
   }
 
-  // TODO: this function doesn't actually do anything in javascript, because we
+  // FIXME: this function doesn't actually do anything in javascript, because we
   // can't swap memory. Is there a way to make something like this work?
   // public partition_in_place<Self extends DoubleEndedIterator>(predicate: (item: this["Item"]) => boolean): number {
   //   let true_count = 0;
@@ -625,6 +627,7 @@ export class DoubleEndedIterator<T = any> extends DoubleEndedIteratorCommon<T> {
 
   // DoubleEndedIteratorCommon
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     for (let x of this.rev()) {
       if (n === 0) {
         return Some(x);
@@ -699,6 +702,7 @@ export class ExactSizeAndDoubleEndedIterator<T = any> extends DoubleEndedIterato
 
   // DoubleEndedIteratorCommon
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     for (let x of this.rev()) {
       if (n === 0) {
         return Some(x);
@@ -1652,6 +1656,7 @@ export class ArrayIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> impleme
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (n >= this.end - this.pos) {
       // This iterator is now empty.
       this.pos = this.end;
@@ -1768,6 +1773,7 @@ export class ArrayIntoIter<T> extends ExactSizeAndDoubleEndedIterator<T> impleme
   }
 
   public nth_back(n: number): Option<this["Item"]> {
+    n = u64(n);
     if (n >= this.end - this.pos) {
       // This iterator is now empty.
       this.end = this.pos;
@@ -1850,11 +1856,15 @@ declare global {
   interface String {
     // Alias for .length
     len(): number;
+    // Returns true if the string has a length of 0.
+    is_empty(): boolean;
   }
 
   interface Array<T> {
     // Alias for .length
     len(): number;
+    // Returns true if the array has a length of 0.
+    is_empty(): boolean;
     // IntoIterator
     Item: T;
     IntoIter: ArrayIntoIter<T>;
@@ -1868,9 +1878,15 @@ declare global {
 String.prototype.len = function() {
   return this.length;
 };
+String.prototype.is_empty = function() {
+  return this.length === 0;
+};
 
 Array.prototype.len = function() {
   return this.length;
+};
+Array.prototype.is_empty = function() {
+  return this.length === 0;
 };
 Array.prototype.iter = function() {
   return this.into_iter();

@@ -169,6 +169,7 @@ export class Range<A extends Step> extends ImplPartialEq(ExactSizeAndDoubleEnded
   }
 
   public nth(n: number): Option<A> {
+    n = u64(n);
     let match = this.start.add_usize(n).match();
     switch (match.type) {
       case OptionType.Some:
@@ -205,6 +206,7 @@ export class Range<A extends Step> extends ImplPartialEq(ExactSizeAndDoubleEnded
   }
 
   public nth_back(n: number): Option<A> {
+    n = u64(n);
     let match = this.end.sub_usize(n).match();
     switch (match.type) {
       case OptionType.Some:
@@ -267,6 +269,7 @@ export class RangeFrom<A extends Step> extends ImplPartialEq(IteratorBase) {
   }
 
   public nth(n: number): Option<A> {
+    n = u64(n);
     let plus_n = this.start.add_usize(n).expect("overflow in RangeFrom.nth");
     this.start = plus_n.add_one();
     return Some(plus_n);
@@ -364,6 +367,7 @@ export class RangeInclusive<A extends Step> extends ImplPartialEq(ExactSizeAndDo
   }
 
   public nth(n: number): Option<A> {
+    n = u64(n);
     this.compute_is_empty();
     if (this._is_empty.unwrap_or(false)) {
       return None();
@@ -474,6 +478,7 @@ export class RangeInclusive<A extends Step> extends ImplPartialEq(ExactSizeAndDo
   }
 
   public nth_back(n: number): Option<A> {
+    n = u64(n);
     this.compute_is_empty();
     if (this._is_empty.unwrap_or(false)) {
       return None();

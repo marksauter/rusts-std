@@ -51,6 +51,7 @@ export class Zip<A extends IteratorCommon, B extends IteratorCommon>
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     let next = this.next();
     while (next.is_some()) {
       if (n === 0) {
@@ -114,6 +115,7 @@ export class ZipExactSizeIterator<A extends ExactSizeIterator, B extends ExactSi
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     let next = this.next();
     while (next.is_some()) {
       if (n === 0) {
@@ -178,6 +180,7 @@ export class ZipExactSizeAndDoubleEndedIterator<
   }
 
   public nth(n: number): Option<this["Item"]> {
+    n = u64(n);
     let next = this.next();
     while (next.is_some()) {
       if (n === 0) {
